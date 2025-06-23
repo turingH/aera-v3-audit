@@ -76,6 +76,7 @@
 - `updateWhitelist(address vault, address[] addresses, bool isWhitelisted)` toggles whitelist status for each address and can reverse previous removals. See `TransferWhitelistHook.sol` lines 22-39.
 - Only callers with `requiresVaultAuth` may update the whitelist, preventing unauthorized freezes (line 25).
 - `beforeTransfer()` checks both parties against the whitelist; re-whitelisting restores transfer ability. See `TransferWhitelistHook.sol` lines 41-55.
+- The two `require` statements operate independently. If `from` equals `transferAgent`, only the sender check is skipped; the recipient must still be whitelisted (and vice versa). See `TransferWhitelistHook.sol` lines 41-55 and `MultiDepositorVault.sol` lines 109-125.
 
 ### Bridge Transfer Restrictions
 - `MultiDepositorVault._update` calls `hook.beforeTransfer(from, to, provisioner)` for every mint, burn, or transfer, ensuring hooks run for bridge operations. See `MultiDepositorVault.sol` lines 108-125.
