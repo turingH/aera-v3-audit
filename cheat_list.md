@@ -51,6 +51,7 @@
 
 ### Fee Accrual vs Claiming
 - `_accrueFees` only updates accounting variables; actual token transfers occur in `claimFees`.
+- Deposits or redeems after a snapshot do not alter fees. `_accrueFees` uses `Math.min` on unit price and total supply to compute TVL, isolating each accrual period. See `PriceAndFeeCalculator.sol` lines 332-369 and `DelayedFeeCalculator.sol` lines 68-90, 147-150.
 
 ### Validation Highlights
 - Token multipliers checked against min/max bounds.
