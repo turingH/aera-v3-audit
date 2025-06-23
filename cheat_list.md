@@ -85,6 +85,8 @@
 ### Transfer Whitelist Mechanics
 - `updateWhitelist(address vault, address[] addresses, bool isWhitelisted)` toggles whitelist status for each address and can reverse previous removals. See `TransferWhitelistHook.sol` lines 22-39.
 - Only callers with `requiresVaultAuth` may update the whitelist, preventing unauthorized freezes (line 25).
+- `updateWhitelist` is executed on-chain and requires `requiresVaultAuth`; no off-chain signature or deadline exists. See `TransferWhitelistHook.sol` lines 22-39.
+- `beforeTransfer` relies only on stored whitelist and transfer status, with no signature parameters. See `TransferWhitelistHook.sol` lines 41-55 and `AbstractTransferHook.sol` lines 24-33.
 - `beforeTransfer()` checks both parties against the whitelist; re-whitelisting restores transfer ability. See `TransferWhitelistHook.sol` lines 41-55.
 - The two `require` statements operate independently. If `from` equals `transferAgent`, only the sender check is skipped; the recipient must still be whitelisted (and vice versa). See `TransferWhitelistHook.sol` lines 41-55 and `MultiDepositorVault.sol` lines 109-125.
 - `AbstractTransferHook.beforeTransfer` only enforces `isVaultUnitTransferable` when neither participant is the `transferAgent` nor `address(0)`. Derived hooks like `TransferWhitelistHook` and `TransferBlacklistHook` override this to validate the non-`transferAgent` address even during mint or burn. See `AbstractTransferHook.sol` lines 24-33, `TransferWhitelistHook.sol` lines 49-54, and `TransferBlacklistHook.sol` lines 41-43.
@@ -108,6 +110,8 @@
 - `_solveDepositDirect` and `_solveRedeemDirect` always deliver assets to `request.user`. See `Provisioner.sol` lines 776-787 and 815-826.
 - CCTP bridging uses the vault address (`bytes32(uint160(address(vault)))`) as the cross-chain recipient, not user addresses. See `CCTPHooks.fork.t.sol` lines 147-156.
 - Direct solving does not support cross-chain address mapping. Assets always return to `request.user` on the source chain. See `Provisioner.sol` lines 764-791 and 803-830.
+- Requests move assets to the Provisioner and record the hash on-chain; there is no off-chain signature to replay across chains. See `requestDeposit` lines 201-217 and `requestRedeem` lines 242-258.
+- Solving functions rebuild the hash from storage using `_getRequestHash` and track usage via `asyncDepositHashes` and `asyncRedeemHashes`, preventing cross-chain reuse. See `Provisioner.sol` lines 68-72 and 1005-1030.
 
 ### Transfer Hook Design
 - `MultiDepositorVault` stores a single `beforeTransferHook` selected at deployment. `_update()` fetches this hook and calls `hook.beforeTransfer()` once per transfer. See `MultiDepositorVault.sol` lines 49-54 and 108-114.
