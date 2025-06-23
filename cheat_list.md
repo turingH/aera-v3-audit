@@ -147,7 +147,7 @@
 86. () `addCallerCapability()` modifies this on-chain storage without bridging. See `Forwarder.sol` lines 61-69.
 87. () `execute()` checks `_canCall[msg.sender][targetAndSelector]` using only on-chain data; no off-chain signatures are involved. See `Forwarder.sol` lines 33-57.
 88. () Permissions must be granted separately per chain, so cross-chain replay attacks are not possible unless the owner intentionally duplicates permissions.
-89. () `execute()` forwards calldata without parameter validation; permissions only reference target and selector. The target contract must handle argument checks. See `Forwarder.sol` lines 33-54.
+89. () `execute()` forwards calldata to `target.call(data)` after verifying only the target and selector via `_canCall`. No further argument validation is performed. This design expects the target contract to enforce any parameter restrictions. See `Forwarder.sol` lines 33-54.
 
 ### Request Hashing Without Signatures
 90. () `asyncDepositHashes` and `asyncRedeemHashes` store used request hashes per chain. See `Provisioner.sol` lines 62-72.
