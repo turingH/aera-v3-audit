@@ -79,16 +79,17 @@
 ### Fee Accrual vs Claiming
 41. () `_accrueFees` only updates accounting variables; actual token transfers occur in `claimFees`.
 42. () Deposits or redeems after a snapshot do not alter fees. `_accrueFees` uses `Math.min` on unit price and total supply to compute TVL, isolating each accrual period. See `PriceAndFeeCalculator.sol` lines 332-369 and `DelayedFeeCalculator.sol` lines 68-90, 147-150.
+43. () Fees accrue only when `PriceAndFeeCalculator.setUnitPrice` or `unpauseVault` invokes `_accrueFees`; neither `solveRequestsVault` nor `solveRequestsDirect` call these functions, so solving method does not affect fee collection. See `PriceAndFeeCalculator.sol` lines 156-216 and absence of `_accrueFees` in `Provisioner.sol`.
 ### Fee Claims Caller Context
-43. () `FeeVault.claimFees` invokes the calculator with the vault's balance. See `FeeVault.sol` lines 105-110.
-44. () `BaseFeeCalculator.claimFees` indexes `_vaultAccruals[msg.sender]` because the vault contract calls this function. See `BaseFeeCalculator.sol` lines 102-118.
-45. () Unit test `BaseFeeCalculator.t.sol` lines 188-198 calls `claimFees` with `vm.prank(BASE_VAULT)`, confirming the caller is the vault.
+44. () `FeeVault.claimFees` invokes the calculator with the vault's balance. See `FeeVault.sol` lines 105-110.
+45. () `BaseFeeCalculator.claimFees` indexes `_vaultAccruals[msg.sender]` because the vault contract calls this function. See `BaseFeeCalculator.sol` lines 102-118.
+46. () Unit test `BaseFeeCalculator.t.sol` lines 188-198 calls `claimFees` with `vm.prank(BASE_VAULT)`, confirming the caller is the vault.
 
 ### Fee Claim Order
-46. () `BaseFeeCalculator.claimFees` subtracts accrued amounts from storage before any transfer. The function decreases `accruedFees` and `accruedProtocolFees` in `_vaultAccruals[msg.sender]` before returning. See `BaseFeeCalculator.sol` lines 103-119.
-47. () `FeeVault.claimFees` obtains claim amounts, then performs transfers. The fee token (`FEE_TOKEN`) is immutable and set in the constructor (see `FeeVault.sol` lines 26-74 and 108-124).
-48. () `_beforeClaimFees` in `DelayedFeeCalculator` accrues the pending snapshot and deletes it so each period is claimed once. See `DelayedFeeCalculator.sol` lines 147-150 and 186-198.
-49. () Because accrual and storage updates occur before external transfers—and the fee token cannot change—reentrancy during fee claims cannot replay stale balances.
+47. () `BaseFeeCalculator.claimFees` subtracts accrued amounts from storage before any transfer. The function decreases `accruedFees` and `accruedProtocolFees` in `_vaultAccruals[msg.sender]` before returning. See `BaseFeeCalculator.sol` lines 103-119.
+48. () `FeeVault.claimFees` obtains claim amounts, then performs transfers. The fee token (`FEE_TOKEN`) is immutable and set in the constructor (see `FeeVault.sol` lines 26-74 and 108-124).
+49. () `_beforeClaimFees` in `DelayedFeeCalculator` accrues the pending snapshot and deletes it so each period is claimed once. See `DelayedFeeCalculator.sol` lines 147-150 and 186-198.
+50. () Because accrual and storage updates occur before external transfers—and the fee token cannot change—reentrancy during fee claims cannot replay stale balances.
 
 
 ### Validation Highlights
