@@ -19,6 +19,8 @@
 - Users create requests via `requestDeposit` or `requestRedeem` transferring tokens/units to the Provisioner.
 - Vault solving (`solveRequestsVault`) mints/burns units through `enter()`/`exit()` using oracle-based pricing.
 - Direct solving supports only fixed-price requests and transfers existing units from solver to user.
+- Deposit cap enforcement occurs only when vault units are minted. `deposit` and `mint` call `_requireDepositCapNotExceeded` before `_syncDeposit` (see `Provisioner.sol` lines 117-128 and 141-150). Vault-solving functions `_solveDepositVaultAutoPrice` and `_solveDepositVaultFixedPrice` check `_guardDepositCapExceeded` before calling `enter()` (lines 541-552 and 598-610). `_solveDepositDirect` merely transfers existing units without minting, so the cap is unchanged (lines 764-791).
+
 - Solver tips are accumulated and paid once per batch.
 
 ### Fee Calculation
@@ -73,7 +75,7 @@
 
 ### Validation Highlights
 - Token multipliers checked against min/max bounds.
-- Deposit caps enforce vault size limits.
+- Deposit caps enforce vault size limits whenever new units are minted.
 - `_isDepositCapExceeded` cannot overflow because Solidity 0.8.29 reverts on
   arithmetic overflow. The deposit cap is configured via `setDepositDetails`
   which requires a non-zero value. See `Provisioner.sol` lines 1-2, 384-396,
