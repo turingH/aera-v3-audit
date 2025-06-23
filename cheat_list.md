@@ -100,7 +100,8 @@
 - `struct Request` includes `address user` storing the caller at creation. See `Types.sol` lines 251-265.
 - `requestDeposit` and `requestRedeem` set the user to `msg.sender` via `_getRequestHashParams`. See `Provisioner.sol` lines 201-217 and 242-258.
 - `_solveDepositDirect` and `_solveRedeemDirect` always deliver assets to `request.user`. See `Provisioner.sol` lines 776-787 and 815-826.
-- CCTP bridging uses the vault address (`bytes32(uint160(address(vault)))`) as the cross-chain recipient, not user addresses. See `CCTPHooks.fork.t.sol` lines 147-156.
+- CCTP bridging passes the vault address (`bytes32(uint160(address(vault)))`) as `mintRecipient`. See `CCTPHooks.fork.t.sol` lines 146-163.
+- `depositForBurn` forbids a non-zero `destinationCaller`, preventing users from specifying an alternate destination address. See `CCTPHooks.sol` lines 21-27.
 
 ### Transfer Hook Design
 - `MultiDepositorVault` stores a single `beforeTransferHook` selected at deployment. `_update()` fetches this hook and calls `hook.beforeTransfer()` once per transfer. See `MultiDepositorVault.sol` lines 49-54 and 108-114.
