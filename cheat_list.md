@@ -88,7 +88,7 @@
 ### Fee Claim Order
 47. () `BaseFeeCalculator.claimFees` subtracts accrued amounts from storage before any transfer. The function decreases `accruedFees` and `accruedProtocolFees` in `_vaultAccruals[msg.sender]` before returning. See `BaseFeeCalculator.sol` lines 103-119.
 48. () `FeeVault.claimFees` obtains claim amounts, then performs transfers. The fee token (`FEE_TOKEN`) is immutable and set in the constructor (see `FeeVault.sol` lines 26-74 and 108-124).
-49. () `_beforeClaimFees` in `DelayedFeeCalculator` accrues the pending snapshot and deletes it so each period is claimed once. See `DelayedFeeCalculator.sol` lines 147-150 and 186-198.
+49. () `_beforeClaimFees` in `DelayedFeeCalculator` accrues the pending snapshot by calling `_accrueFees`. This updates `vaultSnapshot.lastFeeAccrual` to the snapshot timestamp and zeroes out the snapshot fields, ensuring each period is claimed only once. See `DelayedFeeCalculator.sol` lines 147-150 and 186-198.
 50. () Because accrual and storage updates occur before external transfers—and the fee token cannot change—reentrancy during fee claims cannot replay stale balances.
 
 
