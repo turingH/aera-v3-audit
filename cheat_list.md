@@ -30,8 +30,13 @@
       allocate tokens beyond the requested amounts, and there is no
       `allocateRewards` or similar function in the repository.
 15. () Solver tips are accumulated and paid once per batch.
-16. () Deposits deduct tips before entering the vault; `_solveDepositVaultAutoPrice` keeps the tip and deposits `tokens - solverTip` (see `src/core/Provisioner.sol` lines 520-552).
-17. () Redeems exit with the full amount, then transfer `tokenOut - solverTip` to the user; `_solveRedeemVaultAutoPrice` retains the tip (lines 650-681).
+16. () Deposits deduct tips from the tokens already pulled in `requestDeposit`.
+    `_solveDepositVaultAutoPrice` subtracts `request.solverTip` from
+    `request.tokens` before calling `enter()`, so the user is never charged
+    again (see `Provisioner.sol` lines 520-552).
+17. () Redeems exit with the full amount and transfer `tokenOut - solverTip` to
+    the user. The tip is withheld from the tokens returned by the vault and does
+    not require another `safeTransferFrom` (lines 650-681).
 18. () `solveRequestsVault` sends the accumulated tips from the Provisioner to the solver at the end of the batch (lines 336-349).
 
 ### Fee Calculation
@@ -156,9 +161,9 @@
 93. () Because no signatures are used, cross-chain domain separator vulnerabilities do not apply; each deployment tracks its own request hashes.
 
 ### Allowance Handling and Fee-on-Transfer Tokens
-94. () `requestDeposit` pulls tokens with `token.safeTransferFrom(msg.sender, address(this), tokensIn)`; allowances are enforced by the token. See `Provisioner.sol` lines 201-202.
+94. () `requestDeposit` pulls tokens with `token.safeTransferFrom(msg.sender, address(this), tokensIn)`; `tokensIn` equals the deposit amount plus any solver tip, so the approved allowance covers the entire deduction (see `Provisioner.sol` lines 201-207).
 95. () `MultiDepositorVault.enter` similarly calls `token.safeTransferFrom(sender, address(this), tokenAmount)` before minting. See `MultiDepositorVault.sol` lines 67-71.
-96. () Direct solving uses the same helpers: `_solveDepositDirect` (lines 776-781) and `_solveRedeemDirect` (lines 815-820) rely on `safeTransfer` and `safeTransferFrom`.
+96. () Direct solving uses the same helpers: `_solveDepositDirect` (lines 776-781) and `_solveRedeemDirect` (lines 815-820) move tokens held by the Provisioner or solver; they never pull additional funds from `request.user`.
 97. () Vault tokens inherit OpenZeppelin `ERC20` without overriding `_transfer` or `_spendAllowance` (see `MultiDepositorVault.sol` lines 1-22). Fee accounting is isolated in `FeeVault.claimFees`, which simply transfers tokens after consulting the calculator (lines 105-117). Allowances are therefore never modified by vault logic, and tokens that remove additional amounts are considered non-compliant and out of scope.
 
 ### Deposit Refund Timeout
@@ -193,3 +198,4 @@
 112. () `PriceAndFeeCalculator` stores each vault's `unitPrice`. Conversion helpers like `convertTokenToUnitsIfActive` rely exclusively on this stored value and never read the vault's token balance. See `PriceAndFeeCalculator.sol` lines 270-289.
 113. () The owner initializes `unitPrice` once via `setInitialPrice`. Calls revert if `unitPrice == 0`, preventing deposits before initialization. See `PriceAndFeeCalculator.sol` lines 94-118.
 114. () Provisioner conversions call `convertTokenToUnitsIfActive`, so pre-transferring tokens to the vault cannot influence share pricing. See `Provisioner.sol` lines 932-941.
+115. () Allowances are checked only once during `requestDeposit` or `requestRedeem` when the full token amount (including any solver tip) is transferred to the Provisioner. Later solving functions operate solely on these stored funds or on solver-held tokens and never invoke `safeTransferFrom` on the user again.
