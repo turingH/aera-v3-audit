@@ -77,10 +77,10 @@
 45. () Unit test `BaseFeeCalculator.t.sol` lines 188-198 calls `claimFees` with `vm.prank(BASE_VAULT)`, confirming the caller is the vault.
 
 ### Fee Claim Order
-46. () `BaseFeeCalculator.claimFees` subtracts accrued amounts from storage before returning the claimable values. See `BaseFeeCalculator.sol` lines 103-120.
-47. () `FeeVault.claimFees` transfers tokens only after calling the calculator and verifying fees were earned. See `FeeVault.sol` lines 108-124.
-48. () `_beforeClaimFees` in `DelayedFeeCalculator` accrues fees and updates storage before `claimFees` reads the balances. See `DelayedFeeCalculator.sol` lines 147-150.
-49. () Because storage updates happen before external transfers, reentrancy during fee claims cannot replay stale balances.
+46. () `BaseFeeCalculator.claimFees` subtracts accrued amounts from storage before any transfer. The function decreases `accruedFees` and `accruedProtocolFees` in `_vaultAccruals[msg.sender]` before returning. See `BaseFeeCalculator.sol` lines 103-119.
+47. () `FeeVault.claimFees` obtains claim amounts, then performs transfers. The fee token (`FEE_TOKEN`) is immutable and set in the constructor (see `FeeVault.sol` lines 26-74 and 108-124).
+48. () `_beforeClaimFees` in `DelayedFeeCalculator` accrues the pending snapshot and deletes it so each period is claimed once. See `DelayedFeeCalculator.sol` lines 147-150 and 186-198.
+49. () Because accrual and storage updates occur before external transfers—and the fee token cannot change—reentrancy during fee claims cannot replay stale balances.
 
 
 ### Validation Highlights
