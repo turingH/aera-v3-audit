@@ -56,6 +56,10 @@
 ### Validation Highlights
 - Token multipliers checked against min/max bounds.
 - Deposit caps enforce vault size limits.
+- `_isDepositCapExceeded` cannot overflow because Solidity 0.8.29 reverts on
+  arithmetic overflow. The deposit cap is configured via `setDepositDetails`
+  which requires a non-zero value. See `Provisioner.sol` lines 1-2, 384-396,
+  and 920-925.
 - Guard functions prevent solver tip underflow and deadline bypass.
 
 ### Transfer Whitelist Mechanics
