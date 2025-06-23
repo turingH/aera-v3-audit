@@ -77,3 +77,8 @@
 - `TransferWhitelistHook.beforeTransfer` validates both parties even when minting or burning. The non-`transferAgent` party must be whitelisted. See `TransferWhitelistHook.sol` lines 49-54.
 - `TransferBlacklistHook.beforeTransfer` blocks sanctioned addresses as `from` or `to` even during provisioner operations. See `TransferBlacklistHook.sol` lines 41-43.
 - Bridge contracts designated as provisioner therefore cannot mint or transfer vault units to restricted users.
+
+### Token Transfer Requirements
+- Repository assumes standard ERC-20 behavior. Tokens with burn mechanics or fees on transfer are unsupported. See `IMorpho.sol` lines 106-113.
+- `Provisioner` moves tokens using `safeTransferFrom` without custom allowance logic. See `Provisioner.sol` line 201-202.
+- `MultiDepositorVault._update` delegates to `ERC20`'s `_update` after running hooks; no fee deductions occur. See `MultiDepositorVault.sol` lines 108-125.
