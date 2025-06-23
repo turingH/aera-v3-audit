@@ -80,6 +80,7 @@
   arithmetic overflow. The deposit cap is configured via `setDepositDetails`
   which requires a non-zero value. See `Provisioner.sol` lines 1-2, 384-396,
   and 920-925.
+- Deposit cap checks use `convertUnitsToNumeraire()` with the current `unitPrice`. `priceAge` caching is only for staleness; price updates during a batch adjust the cap automatically (see `Provisioner.sol` lines 540-545, 598-603 and `PriceAndFeeCalculator.sol` lines 250-267).
 - Guard functions prevent solver tip underflow and deadline bypass.
 
 ### Transfer Whitelist Mechanics
