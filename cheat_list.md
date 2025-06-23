@@ -72,6 +72,12 @@
 - `BaseFeeCalculator.claimFees` indexes `_vaultAccruals[msg.sender]` because the vault contract calls this function. See `BaseFeeCalculator.sol` lines 102-118.
 - Unit test `BaseFeeCalculator.t.sol` lines 188-198 calls `claimFees` with `vm.prank(BASE_VAULT)`, confirming the caller is the vault.
 
+### Fee Claim Order
+- `BaseFeeCalculator.claimFees` subtracts accrued amounts from storage before returning the claimable values. See `BaseFeeCalculator.sol` lines 103-120.
+- `FeeVault.claimFees` transfers tokens only after calling the calculator and verifying fees were earned. See `FeeVault.sol` lines 108-124.
+- `_beforeClaimFees` in `DelayedFeeCalculator` accrues fees and updates storage before `claimFees` reads the balances. See `DelayedFeeCalculator.sol` lines 147-150.
+- Because storage updates happen before external transfers, reentrancy during fee claims cannot replay stale balances.
+
 
 ### Validation Highlights
 - Token multipliers checked against min/max bounds.
