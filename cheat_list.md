@@ -155,3 +155,7 @@
 97. () `_syncDeposit` sets `refundableUntil = block.timestamp + depositRefundTimeout` and stores it in `userUnitsRefundableUntil[msg.sender]`. See `Provisioner.sol` lines 479-489.
 98. () Transfers query `areUserUnitsLocked` which returns `userUnitsRefundableUntil[user] >= block.timestamp`, so locks expire naturally when the timestamp passes. See `Provisioner.sol` lines 450-452.
 99. () `depositRefundTimeout` is configured via `setDepositDetails` and must not exceed `MAX_DEPOSIT_REFUND_TIMEOUT = 30 days`. See `Provisioner.sol` lines 384-395 and `Constants.sol` lines 140-143.
+
+### Guardian Submission Permissions
+100. () `setGuardianRoot` is restricted by `requiresAuth`, so only the owner assigns each guardian's allowed operations. See `BaseVault.sol` lines 154-156.
+101. () `_executeSubmit` verifies every non-static operation against the guardian's Merkle root before calling it; static calls use `staticcall` and cannot modify state. See `BaseVault.sol` lines 382-418.
