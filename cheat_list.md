@@ -37,7 +37,9 @@
   3. resets daily counters when a new day starts.
 
 ### Deadline Validation
-- All solver functions verify `request.deadline >= block.timestamp` and refund expired requests.
+- All solver functions verify `request.deadline >= block.timestamp` and refund expired requests. Example check in `_solveDepositDirect` (see `Provisioner.sol` lines 768-790).
+- `requestDeposit` and `requestRedeem` require the deadline to be in the future and within `MAX_SECONDS_TO_DEADLINE` (365 days). See `Provisioner.sol` lines 189-197 and 230-237; constant defined at `Constants.sol` line 140.
+- `Request` struct stores this `deadline` parameter for each request (`Types.sol` lines 251-265).
 
 ### Request Cancellation Mechanics
 - `refundRequest()` only permits early cancellation when the caller is authorized or the deadline has passed. See `Provisioner.sol` lines 262-289.
