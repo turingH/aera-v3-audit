@@ -29,7 +29,7 @@
 ### Fee Calculation
 19. () `DelayedFeeCalculator` records snapshots; fees accrue after the dispute period.
 20. () TVL and performance fees use time-weighted averages and monotonic highest profit tracking.
-21. () Pausing mechanisms and price tolerance checks protect against manipulation.
+21. () Pausing halts price updates but fee claims remain allowed. `previewFees` simply reads accrued amounts, and `claimFees` is restricted to the fee recipient.
 
 ### Rounding & Numeraire
 22. () Deposits and redemptions use floor rounding; mint calculations use ceiling rounding when required.
@@ -160,3 +160,5 @@
 100. () `setGuardianRoot` is restricted by `requiresAuth`, so only the owner assigns each guardian's allowed operations. See `BaseVault.sol` lines 154-156.
 101. () `_executeSubmit` verifies every non-static operation against the guardian's Merkle root before calling it; static calls use `staticcall` and cannot modify state. See `BaseVault.sol` lines 382-418.
 102. () `_enforceDailyLoss` checks that `newLoss <= maxDailyLossInNumeraire` before returning. Both values are `uint128`, so the cast in `_enforceSlippageLimitAndDailyLoss` is safe. See `BaseSlippageHooks.sol` lines 186-212 and `IBaseSlippageHooks.sol` lines 13-23.
+103. () Claiming fees is permitted while a vault is paused. `isVaultPaused` and `previewFees` simply expose stored values (see `PriceAndFeeCalculator.sol` lines 305-321). `FeeVault.claimFees` restricts withdrawals to the fee recipient via `onlyFeeRecipient` (see `FeeVault.sol` lines 43-46 and 105-116).
+
