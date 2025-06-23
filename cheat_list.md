@@ -36,6 +36,12 @@
   2. updates and checks cumulative daily loss,
   3. resets daily counters when a new day starts.
 
+### KyberSwapDexHooks Fee Configuration
+- `_processSwapHooks` rejects any fee receivers:
+  `require(desc.feeReceivers.length == 0)` in `KyberSwapDexHooks.sol` lines 45-52.
+- The interface declares `error AeraPeriphery__FeeReceiversNotEmpty()` in `IKyberSwapDexHooks.sol` line 15.
+- Unit tests at `KyberSwapDexHooks.t.sol` lines 197-231 and 426-451 confirm swaps revert when fee receivers are provided.
+
 ### Deadline Validation
 - All solver functions verify `request.deadline >= block.timestamp` and refund expired requests. Example check in `_solveDepositDirect` (see `Provisioner.sol` lines 768-790).
 - `requestDeposit` and `requestRedeem` require the deadline to be in the future and within `MAX_SECONDS_TO_DEADLINE` (365 days). See `Provisioner.sol` lines 189-197 and 230-237; constant defined at `Constants.sol` line 140.
