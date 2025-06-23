@@ -105,80 +105,81 @@
 ### Transfer Whitelist Mechanics
 55. () `updateWhitelist(address vault, address[] addresses, bool isWhitelisted)` toggles whitelist status for each address and can reverse previous removals. See `TransferWhitelistHook.sol` lines 22-39.
 56. () Only callers with `requiresVaultAuth` may update the whitelist, preventing unauthorized freezes (line 25).
-57. () `updateWhitelist` is executed on-chain and requires `requiresVaultAuth`; no off-chain signature or deadline exists. See `TransferWhitelistHook.sol` lines 22-39.
-58. () `beforeTransfer` relies only on stored whitelist and transfer status, with no signature parameters. See `TransferWhitelistHook.sol` lines 41-55 and `AbstractTransferHook.sol` lines 24-33.
-59. () `beforeTransfer()` checks both parties against the whitelist; re-whitelisting restores transfer ability. See `TransferWhitelistHook.sol` lines 41-55.
-60. () The whitelist mapping is a simple boolean flag per address. Re-whitelisting sets `whitelist[vault][addr] = true` again, unlocking all vault units regardless of origin. See `TransferWhitelistHook.sol` lines 16-39.
-61. () The two `require` statements in `beforeTransfer` mirror each other. Each verifies the non-`transferAgent` address is whitelisted, so skipping one check never allows both parties to bypass validation. See `TransferWhitelistHook.sol` lines 49-55 and `MultiDepositorVault.sol` lines 108-125.
-62. () `MultiDepositorVault._update` always passes the vault's `provisioner` as `transferAgent`. The `from` whitelist check is skipped only when `from` equals this provisioner. If the provisioner calls `beforeTransfer` with any other `from` address, the call reverts unless that address is whitelisted. The recipient must still be whitelisted. See `MultiDepositorVault.sol` lines 108-115 and `TransferWhitelistHook.sol` lines 49-55. Unit tests at `BeforeTransferWhitelistHooks.t.sol` lines 72-98 confirm this behavior.
-63. () `AbstractTransferHook.beforeTransfer` only enforces `isVaultUnitTransferable` when neither participant is the `transferAgent` nor `address(0)`. Derived hooks like `TransferWhitelistHook` and `TransferBlacklistHook` override this to validate the non-`transferAgent` address even during mint or burn. See `AbstractTransferHook.sol` lines 24-33, `TransferWhitelistHook.sol` lines 49-54, and `TransferBlacklistHook.sol` lines 41-43.
+57. () `setIsVaultUnitsTransferable(address vault, bool isTransferable)` is also protected by `requiresVaultAuth`, so only the vault owner or authorized roles can enable or disable transfers. See `AbstractTransferHook.sol` lines 23-26.
+58. () `updateWhitelist` is executed on-chain and requires `requiresVaultAuth`; no off-chain signature or deadline exists. See `TransferWhitelistHook.sol` lines 22-39.
+59. () `beforeTransfer` relies only on stored whitelist and transfer status, with no signature parameters. See `TransferWhitelistHook.sol` lines 41-55 and `AbstractTransferHook.sol` lines 24-33.
+60. () `beforeTransfer()` checks both parties against the whitelist; re-whitelisting restores transfer ability. See `TransferWhitelistHook.sol` lines 41-55.
+61. () The whitelist mapping is a simple boolean flag per address. Re-whitelisting sets `whitelist[vault][addr] = true` again, unlocking all vault units regardless of origin. See `TransferWhitelistHook.sol` lines 16-39.
+62. () The two `require` statements in `beforeTransfer` mirror each other. Each verifies the non-`transferAgent` address is whitelisted, so skipping one check never allows both parties to bypass validation. See `TransferWhitelistHook.sol` lines 49-55 and `MultiDepositorVault.sol` lines 108-125.
+63. () `MultiDepositorVault._update` always passes the vault's `provisioner` as `transferAgent`. The `from` whitelist check is skipped only when `from` equals this provisioner. If the provisioner calls `beforeTransfer` with any other `from` address, the call reverts unless that address is whitelisted. The recipient must still be whitelisted. See `MultiDepositorVault.sol` lines 108-115 and `TransferWhitelistHook.sol` lines 49-55. Unit tests at `BeforeTransferWhitelistHooks.t.sol` lines 72-98 confirm this behavior.
+64. () `AbstractTransferHook.beforeTransfer` only enforces `isVaultUnitTransferable` when neither participant is the `transferAgent` nor `address(0)`. Derived hooks like `TransferWhitelistHook` and `TransferBlacklistHook` override this to validate the non-`transferAgent` address even during mint or burn. See `AbstractTransferHook.sol` lines 24-33, `TransferWhitelistHook.sol` lines 49-54, and `TransferBlacklistHook.sol` lines 41-43.
 
 ### Bridge Transfer Restrictions
-64. () `MultiDepositorVault._update` calls `hook.beforeTransfer(from, to, provisioner)` for every mint, burn, or transfer, ensuring hooks run for bridge operations. See `MultiDepositorVault.sol` lines 108-125.
-65. () `TransferWhitelistHook.beforeTransfer` validates both parties even when minting or burning. The non-`transferAgent` party must be whitelisted. See `TransferWhitelistHook.sol` lines 49-54.
-66. () During mint operations (`from == address(0)`), the second `require` enforces the recipient `to` is whitelisted. When burning (`to == address(0)`), the first `require` validates `from`. See `TransferWhitelistHook.sol` lines 49-54.
-67. () `TransferBlacklistHook.beforeTransfer` blocks sanctioned addresses as `from` or `to` even during provisioner operations. See `TransferBlacklistHook.sol` lines 41-43.
-68. () Unlike the whitelist hook, `TransferBlacklistHook` has no `transferAgent` exemption: both addresses are always checked against the sanctions oracle. See `TransferBlacklistHook.sol` lines 41-43 and `TransferWhitelistHook.sol` lines 49-54.
-69. () Bridge contracts designated as provisioner therefore cannot mint or transfer vault units to restricted users.
-70. () Cross-chain bridging mints vault units to the vault address first. `depositForBurn` encodes `bytes32(uint160(address(vault)))` as the recipient (see `CCTPHooks.fork.t.sol` lines 147-156). `MultiDepositorVault._update` then calls `beforeTransfer(0, vault, provisioner)` requiring the vault be whitelisted. When the vault later transfers units to the user, `_update` invokes `beforeTransfer(vault, user, provisioner)` so the user must also be whitelisted (see `MultiDepositorVault.sol` lines 108-125 and `TransferWhitelistHook.sol` lines 41-55). This two-step check prevents restricted users from receiving tokens via bridge.
+65. () `MultiDepositorVault._update` calls `hook.beforeTransfer(from, to, provisioner)` for every mint, burn, or transfer, ensuring hooks run for bridge operations. See `MultiDepositorVault.sol` lines 108-125.
+66. () `TransferWhitelistHook.beforeTransfer` validates both parties even when minting or burning. The non-`transferAgent` party must be whitelisted. See `TransferWhitelistHook.sol` lines 49-54.
+67. () During mint operations (`from == address(0)`), the second `require` enforces the recipient `to` is whitelisted. When burning (`to == address(0)`), the first `require` validates `from`. See `TransferWhitelistHook.sol` lines 49-54.
+68. () `TransferBlacklistHook.beforeTransfer` blocks sanctioned addresses as `from` or `to` even during provisioner operations. See `TransferBlacklistHook.sol` lines 41-43.
+69. () Unlike the whitelist hook, `TransferBlacklistHook` has no `transferAgent` exemption: both addresses are always checked against the sanctions oracle. See `TransferBlacklistHook.sol` lines 41-43 and `TransferWhitelistHook.sol` lines 49-54.
+70. () Bridge contracts designated as provisioner therefore cannot mint or transfer vault units to restricted users.
+71. () Cross-chain bridging mints vault units to the vault address first. `depositForBurn` encodes `bytes32(uint160(address(vault)))` as the recipient (see `CCTPHooks.fork.t.sol` lines 147-156). `MultiDepositorVault._update` then calls `beforeTransfer(0, vault, provisioner)` requiring the vault be whitelisted. When the vault later transfers units to the user, `_update` invokes `beforeTransfer(vault, user, provisioner)` so the user must also be whitelisted (see `MultiDepositorVault.sol` lines 108-125 and `TransferWhitelistHook.sol` lines 41-55). This two-step check prevents restricted users from receiving tokens via bridge.
 
 ### Cross-Chain Whitelist Limitations
-71. () `TransferWhitelistHook` stores whitelist entries per chain with no automatic synchronization. See `TransferWhitelistHook.sol` line 16.
-72. () Addresses bridged to another chain are not whitelisted by default; `updateWhitelist` must be called separately on each chain. See `TransferWhitelistHook.sol` lines 22-39.
-73. () If the destination address is not whitelisted, `beforeTransfer()` reverts during mint or burn, preventing redemption. See `TransferWhitelistHook.sol` lines 49-54 and `MultiDepositorVault.sol` lines 108-125.
+72. () `TransferWhitelistHook` stores whitelist entries per chain with no automatic synchronization. See `TransferWhitelistHook.sol` line 16.
+73. () Addresses bridged to another chain are not whitelisted by default; `updateWhitelist` must be called separately on each chain. See `TransferWhitelistHook.sol` lines 22-39.
+74. () If the destination address is not whitelisted, `beforeTransfer()` reverts during mint or burn, preventing redemption. See `TransferWhitelistHook.sol` lines 49-54 and `MultiDepositorVault.sol` lines 108-125.
 
 ### Request Address Binding & Bridging Behavior
-74. () `struct Request` includes `address user` storing the caller at creation. See `Types.sol` lines 251-265.
-75. () `requestDeposit` and `requestRedeem` set the user to `msg.sender` via `_getRequestHashParams`. See `Provisioner.sol` lines 201-217 and 242-258.
-76. () `_solveDepositDirect` and `_solveRedeemDirect` always deliver assets to `request.user`. See `Provisioner.sol` lines 776-787 and 815-826.
-77. () CCTP bridging uses the vault address (`bytes32(uint160(address(vault)))`) as the cross-chain recipient, not user addresses. See `CCTPHooks.fork.t.sol` lines 147-156.
-78. () Direct solving does not support cross-chain address mapping. Assets always return to `request.user` on the source chain. See `Provisioner.sol` lines 764-791 and 803-830.
-79. () Requests move assets to the Provisioner and record the hash on-chain; there is no off-chain signature to replay across chains. See `requestDeposit` lines 201-217 and `requestRedeem` lines 242-258.
-80. () Solving functions rebuild the hash from storage using `_getRequestHash` and track usage via `asyncDepositHashes` and `asyncRedeemHashes`, preventing cross-chain reuse. See `Provisioner.sol` lines 68-72 and 1005-1030.
+75. () `struct Request` includes `address user` storing the caller at creation. See `Types.sol` lines 251-265.
+76. () `requestDeposit` and `requestRedeem` set the user to `msg.sender` via `_getRequestHashParams`. See `Provisioner.sol` lines 201-217 and 242-258.
+77. () `_solveDepositDirect` and `_solveRedeemDirect` always deliver assets to `request.user`. See `Provisioner.sol` lines 776-787 and 815-826.
+78. () CCTP bridging uses the vault address (`bytes32(uint160(address(vault)))`) as the cross-chain recipient, not user addresses. See `CCTPHooks.fork.t.sol` lines 147-156.
+79. () Direct solving does not support cross-chain address mapping. Assets always return to `request.user` on the source chain. See `Provisioner.sol` lines 764-791 and 803-830.
+80. () Requests move assets to the Provisioner and record the hash on-chain; there is no off-chain signature to replay across chains. See `requestDeposit` lines 201-217 and `requestRedeem` lines 242-258.
+81. () Solving functions rebuild the hash from storage using `_getRequestHash` and track usage via `asyncDepositHashes` and `asyncRedeemHashes`, preventing cross-chain reuse. See `Provisioner.sol` lines 68-72 and 1005-1030.
 
 ### Transfer Hook Design
-81. () `MultiDepositorVault` stores a single `beforeTransferHook` selected at deployment. `_update()` fetches this hook and calls `hook.beforeTransfer()` once per transfer. See `MultiDepositorVault.sol` lines 49-54 and 108-114.
-82. () `_setBeforeTransferHook` updates the stored hook; only one hook runs at a time. See `MultiDepositorVault.sol` lines 128-135.
-83. () `TransferWhitelistHook` checks `whitelist` mappings while `TransferBlacklistHook` checks the sanctions oracle. They are independent implementations of `IBeforeTransferHook` and do not combine automatically. See `TransferWhitelistHook.sol` lines 49-55 and `TransferBlacklistHook.sol` lines 39-43.
+82. () `MultiDepositorVault` stores a single `beforeTransferHook` selected at deployment. `_update()` fetches this hook and calls `hook.beforeTransfer()` once per transfer. See `MultiDepositorVault.sol` lines 49-54 and 108-114.
+83. () `_setBeforeTransferHook` updates the stored hook; only one hook runs at a time. See `MultiDepositorVault.sol` lines 128-135.
+84. () `TransferWhitelistHook` checks `whitelist` mappings while `TransferBlacklistHook` checks the sanctions oracle. They are independent implementations of `IBeforeTransferHook` and do not combine automatically. See `TransferWhitelistHook.sol` lines 49-55 and `TransferBlacklistHook.sol` lines 39-43.
 
 ### Forwarder Capability Scope
-84. () The `_canCall` mapping is local to each deployment; there is no cross-chain synchronization. See `Forwarder.sol` lines 20-22.
-85. () `addCallerCapability()` modifies this on-chain storage without bridging. See `Forwarder.sol` lines 61-69.
-86. () `execute()` checks `_canCall[msg.sender][targetAndSelector]` using only on-chain data; no off-chain signatures are involved. See `Forwarder.sol` lines 33-57.
-87. () Permissions must be granted separately per chain, so cross-chain replay attacks are not possible unless the owner intentionally duplicates permissions.
-88. () `execute()` forwards calldata without parameter validation; permissions only reference target and selector. The target contract must handle argument checks. See `Forwarder.sol` lines 33-54.
+85. () The `_canCall` mapping is local to each deployment; there is no cross-chain synchronization. See `Forwarder.sol` lines 20-22.
+86. () `addCallerCapability()` modifies this on-chain storage without bridging. See `Forwarder.sol` lines 61-69.
+87. () `execute()` checks `_canCall[msg.sender][targetAndSelector]` using only on-chain data; no off-chain signatures are involved. See `Forwarder.sol` lines 33-57.
+88. () Permissions must be granted separately per chain, so cross-chain replay attacks are not possible unless the owner intentionally duplicates permissions.
+89. () `execute()` forwards calldata without parameter validation; permissions only reference target and selector. The target contract must handle argument checks. See `Forwarder.sol` lines 33-54.
 
 ### Request Hashing Without Signatures
-89. () `asyncDepositHashes` and `asyncRedeemHashes` store used request hashes per chain. See `Provisioner.sol` lines 62-72.
-90. () `_getRequestHashParams` and `_getRequestHash` compute `keccak256` over request parameters with no EIP‑712 domain. See `Provisioner.sol` lines 1005-1034.
-91. () `requestDeposit` and `requestRedeem` generate these hashes and mark them used. See `Provisioner.sol` lines 204-217 and 247-249.
-92. () Because no signatures are used, cross-chain domain separator vulnerabilities do not apply; each deployment tracks its own request hashes.
+90. () `asyncDepositHashes` and `asyncRedeemHashes` store used request hashes per chain. See `Provisioner.sol` lines 62-72.
+91. () `_getRequestHashParams` and `_getRequestHash` compute `keccak256` over request parameters with no EIP‑712 domain. See `Provisioner.sol` lines 1005-1034.
+92. () `requestDeposit` and `requestRedeem` generate these hashes and mark them used. See `Provisioner.sol` lines 204-217 and 247-249.
+93. () Because no signatures are used, cross-chain domain separator vulnerabilities do not apply; each deployment tracks its own request hashes.
 
 ### Allowance Handling and Fee-on-Transfer Tokens
-93. () `requestDeposit` pulls tokens with `token.safeTransferFrom(msg.sender, address(this), tokensIn)`; allowances are enforced by the token. See `Provisioner.sol` lines 201-202.
-94. () `MultiDepositorVault.enter` similarly calls `token.safeTransferFrom(sender, address(this), tokenAmount)` before minting. See `MultiDepositorVault.sol` lines 67-71.
-95. () Direct solving uses the same helpers: `_solveDepositDirect` (lines 776-781) and `_solveRedeemDirect` (lines 815-820) rely on `safeTransfer` and `safeTransferFrom`.
-96. () Vault tokens inherit OpenZeppelin `ERC20` without overriding `_transfer` or `_spendAllowance` (see `MultiDepositorVault.sol` lines 1-22). Fee accounting is isolated in `FeeVault.claimFees`, which simply transfers tokens after consulting the calculator (lines 105-117). Allowances are therefore never modified by vault logic, and tokens that remove additional amounts are considered non-compliant and out of scope.
+94. () `requestDeposit` pulls tokens with `token.safeTransferFrom(msg.sender, address(this), tokensIn)`; allowances are enforced by the token. See `Provisioner.sol` lines 201-202.
+95. () `MultiDepositorVault.enter` similarly calls `token.safeTransferFrom(sender, address(this), tokenAmount)` before minting. See `MultiDepositorVault.sol` lines 67-71.
+96. () Direct solving uses the same helpers: `_solveDepositDirect` (lines 776-781) and `_solveRedeemDirect` (lines 815-820) rely on `safeTransfer` and `safeTransferFrom`.
+97. () Vault tokens inherit OpenZeppelin `ERC20` without overriding `_transfer` or `_spendAllowance` (see `MultiDepositorVault.sol` lines 1-22). Fee accounting is isolated in `FeeVault.claimFees`, which simply transfers tokens after consulting the calculator (lines 105-117). Allowances are therefore never modified by vault logic, and tokens that remove additional amounts are considered non-compliant and out of scope.
 
 ### Deposit Refund Timeout
-97. () `_syncDeposit` sets `refundableUntil = block.timestamp + depositRefundTimeout` and stores it in `userUnitsRefundableUntil[msg.sender]`. See `Provisioner.sol` lines 479-489.
-98. () Transfers query `areUserUnitsLocked` which returns `userUnitsRefundableUntil[user] >= block.timestamp`, so locks expire naturally when the timestamp passes. See `Provisioner.sol` lines 450-452.
-99. () `depositRefundTimeout` is configured via `setDepositDetails` and must not exceed `MAX_DEPOSIT_REFUND_TIMEOUT = 30 days`. See `Provisioner.sol` lines 384-395 and `Constants.sol` lines 140-143.
+98. () `_syncDeposit` sets `refundableUntil = block.timestamp + depositRefundTimeout` and stores it in `userUnitsRefundableUntil[msg.sender]`. See `Provisioner.sol` lines 479-489.
+99. () Transfers query `areUserUnitsLocked` which returns `userUnitsRefundableUntil[user] >= block.timestamp`, so locks expire naturally when the timestamp passes. See `Provisioner.sol` lines 450-452.
+100. () `depositRefundTimeout` is configured via `setDepositDetails` and must not exceed `MAX_DEPOSIT_REFUND_TIMEOUT = 30 days`. See `Provisioner.sol` lines 384-395 and `Constants.sol` lines 140-143.
 
 ### Guardian Submission Permissions
-100. () `setGuardianRoot` is restricted by `requiresAuth`, so only the owner assigns each guardian's allowed operations. See `BaseVault.sol` lines 154-156.
-101. () Each Merkle leaf hashes `target`, `selector`, `value`, hook addresses and optional callback data (see `BaseVault.sol` lines 608-624). This binds the exact call context to the owner's approved root.
-102. () `_executeSubmit` verifies every non-static operation with `_verifyOperation`; only calls included in the guardian's root are executed. Static calls use `staticcall` and cannot modify state. See `BaseVault.sol` lines 382-418 and 608-640.
-103. () Because guardians cannot change their root, they cannot add arbitrary calls. Any attempt to submit an unapproved operation fails proof verification.
-104. () `_enforceDailyLoss` checks that `newLoss <= maxDailyLossInNumeraire` before returning. Both values are `uint128`, so the cast in `_enforceSlippageLimitAndDailyLoss` is safe. See `BaseSlippageHooks.sol` lines 186-212 and `IBaseSlippageHooks.sol` lines 13-23.
-105. () Claiming fees is permitted while a vault is paused. `isVaultPaused` and `previewFees` simply expose stored values (see `PriceAndFeeCalculator.sol` lines 305-321). `FeeVault.claimFees` restricts withdrawals to the fee recipient via `onlyFeeRecipient` (see `FeeVault.sol` lines 43-46 and 105-116).
+101. () `setGuardianRoot` is restricted by `requiresAuth`, so only the owner assigns each guardian's allowed operations. See `BaseVault.sol` lines 154-156.
+102. () Each Merkle leaf hashes `target`, `selector`, `value`, hook addresses and optional callback data (see `BaseVault.sol` lines 608-624). This binds the exact call context to the owner's approved root.
+103. () `_executeSubmit` verifies every non-static operation with `_verifyOperation`; only calls included in the guardian's root are executed. Static calls use `staticcall` and cannot modify state. See `BaseVault.sol` lines 382-418 and 608-640.
+104. () Because guardians cannot change their root, they cannot add arbitrary calls. Any attempt to submit an unapproved operation fails proof verification.
+105. () `_enforceDailyLoss` checks that `newLoss <= maxDailyLossInNumeraire` before returning. Both values are `uint128`, so the cast in `_enforceSlippageLimitAndDailyLoss` is safe. See `BaseSlippageHooks.sol` lines 186-212 and `IBaseSlippageHooks.sol` lines 13-23.
+106. () Claiming fees is permitted while a vault is paused. `isVaultPaused` and `previewFees` simply expose stored values (see `PriceAndFeeCalculator.sol` lines 305-321). `FeeVault.claimFees` restricts withdrawals to the fee recipient via `onlyFeeRecipient` (see `FeeVault.sol` lines 43-46 and 105-116).
 
 ### Async Request Enabling Checks
-106. () Both solving paths enforce the token's async enable flags.
+107. () Both solving paths enforce the token's async enable flags.
     - `solveRequestsVault` verifies `asyncDepositEnabled` and `asyncRedeemEnabled` before processing each request (see `src/core/Provisioner.sol` lines 304-334).
     - `solveRequestsDirect` performs the same checks before invoking `_solveDepositDirect` or `_solveRedeemDirect` (see `src/core/Provisioner.sol` lines 358-378).
     - The internal helpers rely on these pre-checks and therefore omit them.
     - Unit tests at `test/core/unit/Provisioner.t.sol` lines 3515-3590 confirm that direct solving reverts with `Aera__AsyncDepositDisabled` or `Aera__AsyncRedeemDisabled` when the flags are false.
 
 ### Swap Deadline Enforcement
-107. () `KyberSwapDexHooks` only prepares data and relies on KyberSwap's router for execution. The router's `SimpleSwapData` struct includes a `deadline` field, so each swap is time-bound. See `KyberSwapDexHooks.sol` lines 18-31 and `IMetaAggregationRouterV2.sol` lines 22-36.
+108. () `KyberSwapDexHooks` only prepares data and relies on KyberSwap's router for execution. The router's `SimpleSwapData` struct includes a `deadline` field, so each swap is time-bound. See `KyberSwapDexHooks.sol` lines 18-31 and `IMetaAggregationRouterV2.sol` lines 22-36.
