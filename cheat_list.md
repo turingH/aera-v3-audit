@@ -157,7 +157,7 @@
 93. () `requestDeposit` pulls tokens with `token.safeTransferFrom(msg.sender, address(this), tokensIn)`; allowances are enforced by the token. See `Provisioner.sol` lines 201-202.
 94. () `MultiDepositorVault.enter` similarly calls `token.safeTransferFrom(sender, address(this), tokenAmount)` before minting. See `MultiDepositorVault.sol` lines 67-71.
 95. () Direct solving uses the same helpers: `_solveDepositDirect` (lines 776-781) and `_solveRedeemDirect` (lines 815-820) rely on `safeTransfer` and `safeTransferFrom`.
-96. () The protocol never modifies allowances; standard ERC-20 tokens deduct fees from the transferred amount, so allowances remain accurate. Tokens that remove extra tokens are non-compliant and outside the threat model.
+96. () Vault tokens inherit OpenZeppelin `ERC20` without overriding `_transfer` or `_spendAllowance` (see `MultiDepositorVault.sol` lines 1-22). Fee accounting is isolated in `FeeVault.claimFees`, which simply transfers tokens after consulting the calculator (lines 105-117). Allowances are therefore never modified by vault logic, and tokens that remove additional amounts are considered non-compliant and out of scope.
 
 ### Deposit Refund Timeout
 97. () `_syncDeposit` sets `refundableUntil = block.timestamp + depositRefundTimeout` and stores it in `userUnitsRefundableUntil[msg.sender]`. See `Provisioner.sol` lines 479-489.
