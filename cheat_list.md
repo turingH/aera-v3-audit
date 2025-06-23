@@ -78,7 +78,9 @@
 
 ### Fee Accrual vs Claiming
 41. () `_accrueFees` only updates accounting variables; actual token transfers occur in `claimFees`.
-42. () Deposits or redeems after a snapshot do not alter fees. `_accrueFees` uses `Math.min` on unit price and total supply to compute TVL, isolating each accrual period. See `PriceAndFeeCalculator.sol` lines 332-369 and `DelayedFeeCalculator.sol` lines 68-90, 147-150.
+42. () Deposits or redeems after a snapshot do not alter fees. `_accrueFees` computes TVL from the vault's **total supply** and unit price:
+    `tvl = min(price, lastPrice) * min(totalSupply, lastTotalSupply) / UNIT_PRICE_PRECISION`.
+    Because supply is queried from the vault (`IERC20(vault).totalSupply()`), transient token balances—e.g. solver tips temporarily held in `Provisioner`—never influence fee accrual. See `PriceAndFeeCalculator.sol` lines 332-349 and `DelayedFeeCalculator.sol` lines 68-90, 147-150.
 ### Fee Claims Caller Context
 43. () `FeeVault.claimFees` invokes the calculator with the vault's balance. See `FeeVault.sol` lines 105-110.
 44. () `BaseFeeCalculator.claimFees` indexes `_vaultAccruals[msg.sender]` because the vault contract calls this function. See `BaseFeeCalculator.sol` lines 102-118.
@@ -172,3 +174,5 @@
 104. () `_enforceDailyLoss` checks that `newLoss <= maxDailyLossInNumeraire` before returning. Both values are `uint128`, so the cast in `_enforceSlippageLimitAndDailyLoss` is safe. See `BaseSlippageHooks.sol` lines 186-212 and `IBaseSlippageHooks.sol` lines 13-23.
 105. () Claiming fees is permitted while a vault is paused. `isVaultPaused` and `previewFees` simply expose stored values (see `PriceAndFeeCalculator.sol` lines 305-321). `FeeVault.claimFees` restricts withdrawals to the fee recipient via `onlyFeeRecipient` (see `FeeVault.sol` lines 43-46 and 105-116).
 
+
+106. () Residual solver tips are paid to the solver at batch end before any price update. They never affect vault TVL or fee snapshots. See `Provisioner.sol` lines 346-349 and `PriceAndFeeCalculator.sol` lines 332-349.
