@@ -62,6 +62,7 @@
 ### Atomicity & Reentrancy
 - `nonReentrant` modifier guards `solveRequestsVault` and `solveRequestsDirect`.
 - Request hashes are marked used before processing but revert on failure, preserving state.
+- In `_solveRedeemDirect`, the request hash is cleared before `safeTransfer`; if the vault's `beforeTransfer` hook reverts, `SafeERC20` reverts the entire call so the hash remains intact. See `Provisioner.sol` lines 812-830, `MultiDepositorVault.sol` lines 108-125, and `TransferWhitelistHook.sol` lines 49-54.
 - `MultiDepositorVault.exit` burns units before transferring tokens.
 
 ### Fee Accrual vs Claiming
