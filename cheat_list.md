@@ -100,6 +100,7 @@
 - `TransferBlacklistHook.beforeTransfer` blocks sanctioned addresses as `from` or `to` even during provisioner operations. See `TransferBlacklistHook.sol` lines 41-43.
 - Unlike the whitelist hook, `TransferBlacklistHook` has no `transferAgent` exemption: both addresses are always checked against the sanctions oracle. See `TransferBlacklistHook.sol` lines 41-43 and `TransferWhitelistHook.sol` lines 49-54.
 - Bridge contracts designated as provisioner therefore cannot mint or transfer vault units to restricted users.
+- Cross-chain bridging mints vault units to the vault address first. `depositForBurn` encodes `bytes32(uint160(address(vault)))` as the recipient (see `CCTPHooks.fork.t.sol` lines 147-156). `MultiDepositorVault._update` then calls `beforeTransfer(0, vault, provisioner)` requiring the vault be whitelisted. When the vault later transfers units to the user, `_update` invokes `beforeTransfer(vault, user, provisioner)` so the user must also be whitelisted (see `MultiDepositorVault.sol` lines 108-125 and `TransferWhitelistHook.sol` lines 41-55). This two-step check prevents restricted users from receiving tokens via bridge.
 
 ### Cross-Chain Whitelist Limitations
 - `TransferWhitelistHook` stores whitelist entries per chain with no automatic synchronization. See `TransferWhitelistHook.sol` line 16.
