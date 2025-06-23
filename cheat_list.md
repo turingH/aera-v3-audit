@@ -159,3 +159,4 @@
 ### Guardian Submission Permissions
 100. () `setGuardianRoot` is restricted by `requiresAuth`, so only the owner assigns each guardian's allowed operations. See `BaseVault.sol` lines 154-156.
 101. () `_executeSubmit` verifies every non-static operation against the guardian's Merkle root before calling it; static calls use `staticcall` and cannot modify state. See `BaseVault.sol` lines 382-418.
+102. () `_enforceDailyLoss` checks that `newLoss <= maxDailyLossInNumeraire` before returning. Both values are `uint128`, so the cast in `_enforceSlippageLimitAndDailyLoss` is safe. See `BaseSlippageHooks.sol` lines 186-212 and `IBaseSlippageHooks.sol` lines 13-23.
