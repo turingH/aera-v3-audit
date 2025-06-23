@@ -1,0 +1,7 @@
+{
+  "exactInput - success - multi-hop": "42257",
+  "exactInput - success - single-hop": "41877",
+  "exactInputSingle - success": "40867",
+  "exactOutput - success - multi-hop": "30832",
+  "exactOutputSingle - success": "29554"
+}

@@ -1,0 +1,12 @@
+{
+  "registerVault - success": "44692",
+  "resetHighestPrice - success": "33808",
+  "setThresholds - success": "34138",
+  "setUnitPrice - success - accrueFees decreased exchange rate": "65692",
+  "setUnitPrice - success - accrueFees decreased total supply": "68492",
+  "setUnitPrice - success - accrueFees increased exchange rate": "69129",
+  "setUnitPrice - success - no pause": "49241",
+  "setUnitPrice - success - paused maxPriceToleranceRatio": "34400",
+  "setUnitPrice - success - paused minPriceToleranceRatio": "34413",
+  "setUnitPrice - success - paused minUpdateIntervalMinutes": "34294"
+}

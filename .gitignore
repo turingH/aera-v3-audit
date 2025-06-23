@@ -1,0 +1,26 @@
+# directories
+cache
+coverage
+out
+.history
+docs
+
+# files
+*.env
+*.log
+.DS_Store
+.pnp.*
+lcov.info
+.gas-snapshot
+.cursorignore
+coverage.txt
+
+# broadcasts
+!broadcast
+broadcast/*
+broadcast/*/31337/
+
+# generated
+abi
+4bytes
+openchain_uploadable.txt

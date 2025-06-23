@@ -1,0 +1,46 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: mixed-line-ending
+        name: Mixed Line Ending (convert to LF)
+        args: ["--fix=lf"]
+        description: Forces to replace line ending by the UNIX 'lf' character.
+        exclude: "^docs/autogen"
+
+  - repo: local
+    hooks:
+      - id: format
+        name: Format Solidity code
+        description: Format solidity code with `make lint`
+        language: system
+        entry: make lint
+        exclude: "^lib/"
+        types: [solidity]
+        pass_filenames: false
+
+      - id: slither
+        name: Run Slither
+        description: Run Slither with `make slither`
+        language: system
+        entry: make slither
+        types: [solidity]
+        pass_filenames: false
+
+      - id: snapshot
+        name: Generate gas snapshot (might take a while)
+        description: Generate gas snapshot with `make snapshot` (might take a while)
+        language: system
+        entry: bash -c 'make snapshot-pre-commit 2>&1 | tee /dev/tty'
+        types: [solidity]
+        pass_filenames: true
+        require_serial: true
+
+      #- id: doc
+      #  name: Generate documentation
+      #  description: Generate docs with `make docs`
+      #  language: system
+      #  # generates docs and unstages files if only the commit hash changed within the file, this way only when the documentation is updated, the documentation needs to be regenerated and only the changed files are pushed
+      #  entry: "script/util/doc_gen.sh"
+      #  pass_filenames: true
+      #  require_serial: true

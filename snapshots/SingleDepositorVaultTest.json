@@ -1,0 +1,12 @@
+{
+  "claimFees - success - no protocol fees": "59059",
+  "claimFees - success with protocol": "85740",
+  "claimProtocolFees - success": "56477",
+  "deployment - success": "124",
+  "deposit - success": "92151",
+  "execute - success - multiple": "123343",
+  "execute - success - multiple - send value": "102611",
+  "setFeeCalculator - success": "35367",
+  "setFeeRecipient - success": "29906",
+  "withdraw - success": "86773"
+}

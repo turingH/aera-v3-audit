@@ -1,0 +1,7 @@
+id: no-trailing-comment-period
+description: Disallow trailing periods at the end of comment lines
+language: solidity
+scope: "**/*.sol"
+pattern: '///.*\.$'
+message: "NIT: Comments should not end with a period"
+severity: warning

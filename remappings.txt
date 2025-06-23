@@ -1,0 +1,2 @@
+@oz=lib/openzeppelin-contracts/contracts/
+@solmate=src/dependencies/solmate/

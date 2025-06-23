@@ -1,0 +1,137 @@
+name: "CI"
+
+env:
+  ETH_NODE_URI_MAINNET: ${{ secrets.ALCHEMY_URL_DEV }}
+  FOUNDRY_PROFILE: "ci"
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  lint:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out the repo"
+        uses: "actions/checkout@v4"
+        with:
+          submodules: recursive
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+
+      - name: "Install solhint"
+        run: "npm i -g solhint"
+
+      - name: "Print solhint version"
+        run: "solhint --version"
+
+      - name: "Lint the code"
+        run: "make lint"
+
+      - name: "Add lint summary"
+        run: |
+          echo "## Lint result" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+
+  build:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out the repo"
+        uses: "actions/checkout@v4"
+        with:
+          submodules: recursive
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+
+      - name: "Build the contracts and print their size"
+        run: "forge build --sizes --deny-warnings"
+
+      - name: "Add build summary"
+        run: |
+          echo "## Build result" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+
+  slither:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check out the repo"
+        uses: "actions/checkout@v4"
+        with:
+          submodules: recursive
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+        with:
+          version: "stable"
+
+      - name: "Build contracts in src/ folder"
+        run: forge build --build-info --skip test script
+
+      - name: "Run slither analyzer"
+        uses: crytic/slither-action@v0.4.0
+        with:
+          ignore-compile: false
+          slither-version: "0.11.0"
+          fail-on: "low"
+
+      - name: "Add slither summary"
+        run: |
+          echo "## Slither result" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+
+  test:
+    runs-on: "ubuntu-latest"
+    env:
+      ETH_NODE_URI_MAINNET: ${{ secrets.ETH_NODE_URI_MAINNET }}
+      ARBITRUM_NODE_URI_MAINNET: ${{ secrets.ARBITRUM_NODE_URI_MAINNET }}
+      BASE_NODE_URI_MAINNET: ${{ secrets.BASE_NODE_URI_MAINNET }}
+    steps:
+      - name: "Check out the repo"
+        uses: "actions/checkout@v4"
+        with:
+          submodules: recursive
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+        with:
+          version: "stable"
+
+      - name: "Show the Foundry config"
+        run: "forge --version && echo '\n' && forge config"
+
+      - name: "Generate a fuzz seed that changes weekly to avoid burning through RPC allowance"
+        run: >
+          echo "FOUNDRY_FUZZ_SEED=$(
+            echo $(($EPOCHSECONDS - $EPOCHSECONDS % 604800))
+          )" >> $GITHUB_ENV
+
+      - name: "Run the tests"
+        run: "forge test --force --isolate -vvv --show-progress --gas-snapshot-check true"
+
+      - name: "Check test coverage"
+        env:
+          COVERAGE_MIN: 100
+        run: |
+          FOUNDRY_PROFILE=lite forge coverage --no-match-coverage "(test|mocks|dependencies|Executor.sol|MilkmanRouter.sol|CalldataReader.sol|Sweepable.sol|script)" --force --report summary | tee coverage.txt
+          coverage=$(grep "| Total" coverage.txt | awk '{print $4}' | sed 's/%//')
+          if [ -z "$coverage" ]; then
+            echo "❌ Failed to extract coverage percentage."
+            exit 1
+          fi
+          if (( $(echo "$coverage < $COVERAGE_MIN" | bc -l) )); then
+            echo "❌ Current coverage of $coverage% is below the minimum of $COVERAGE_MIN%."
+            exit 1
+          else
+            echo "✅ Current coverage of $coverage% meets the minimum of $COVERAGE_MIN%."
+          fi
+          rm coverage.txt
+
+      - name: "Add test summary"
+        run: |
+          echo "## Tests result" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY

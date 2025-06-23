@@ -1,0 +1,17 @@
+{
+  "accrueFees - success": "60559",
+  "claimFees - success - accrue fees": "51092",
+  "claimFees - success - no accrual": "27422",
+  "claimFees - success - partialProtocolFeesClaim": "63576",
+  "claimFees - success - partialVaultFeesClaim": "63576",
+  "previewFees - success - accrue fees all claimable": "12139",
+  "previewFees - success - accrue fees partial claimable": "12139",
+  "previewFees - success - nothing to accrue all claimable": "5149",
+  "previewFees - success - nothing to accrue partial claimable": "5149",
+  "registerVault - success": "44697",
+  "setProtocolFeeRecipient - success": "32583",
+  "submitSnapshot - success - accrues fees": "66462",
+  "submitSnapshot - success - no accrual": "54720",
+  "submitSnapshot - success - overwrites pending snapshot": "37654",
+  "submitSnapshot - success - same highest profit": "34736"
+}

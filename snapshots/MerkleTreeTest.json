@@ -1,0 +1,8 @@
+{
+  "verify merkle proof - success - 1024 leaves": "43057",
+  "verify merkle proof - success - 16384 leaves": "46041",
+  "verify merkle proof - success - 2 leaf": "36291",
+  "verify merkle proof - success - 256 leaves": "41558",
+  "verify merkle proof - success - 64 leaves": "40062",
+  "verify merkle proof - success - erc4626 deposit with Merkle root redeem merkle proof": "139708"
+}

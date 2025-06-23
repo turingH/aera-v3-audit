@@ -1,0 +1,5 @@
+{
+  "detectors_to_exclude": "solc-version,timestamp,unused-return,naming-convention,low-level-calls,calls-loop,assembly-usage,immutable-states,different-pragma-directives-are-used,reentrancy-events,uninitialized-state-variables,incorrect-equality",
+  "filter_paths": "(lib/|test/|script/|src/libraries/Encoder.sol|src/libraries/CalldataReader.sol|src/dependencies/solmate/auth/Auth.sol)",
+  "compile_libraries": false
+}

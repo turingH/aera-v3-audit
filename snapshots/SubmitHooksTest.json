@@ -1,0 +1,11 @@
+{
+  "submit - success - after submit hooks": "42219",
+  "submit - success - before and after submit hooks": "42990",
+  "submit - success - before submit hooks": "42235",
+  "submit - success - configurable hooks": "39687",
+  "submit - success - no hooks": "38965",
+  "submit - success - operation after hook": "42126",
+  "submit - success - operation before and after hook": "43228",
+  "submit - success - operation before hooks": "42593",
+  "submit - success - operation configurable after hook": "42894"
+}
