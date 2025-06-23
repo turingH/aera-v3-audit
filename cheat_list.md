@@ -179,3 +179,6 @@
     - `solveRequestsDirect` performs the same checks before invoking `_solveDepositDirect` or `_solveRedeemDirect` (see `src/core/Provisioner.sol` lines 358-378).
     - The internal helpers rely on these pre-checks and therefore omit them.
     - Unit tests at `test/core/unit/Provisioner.t.sol` lines 3515-3590 confirm that direct solving reverts with `Aera__AsyncDepositDisabled` or `Aera__AsyncRedeemDisabled` when the flags are false.
+
+### Swap Deadline Enforcement
+107. () `KyberSwapDexHooks` only prepares data and relies on KyberSwap's router for execution. The router's `SimpleSwapData` struct includes a `deadline` field, so each swap is time-bound. See `KyberSwapDexHooks.sol` lines 18-31 and `IMetaAggregationRouterV2.sol` lines 22-36.
