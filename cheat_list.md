@@ -39,6 +39,11 @@
 ### Deadline Validation
 - All solver functions verify `request.deadline >= block.timestamp` and refund expired requests.
 
+### Request Cancellation Mechanics
+- `refundRequest()` only permits early cancellation when the caller is authorized or the deadline has passed. See `Provisioner.sol` lines 262-289.
+- Unit test `Provisioner.t.sol` lines 1737-1769 demonstrates unauthorized callers revert before the deadline.
+- Regular users therefore cannot revoke pending requests; they remain valid until executed or expired.
+
 ### Vault Architecture
 - Each `Provisioner` manages a single `MultiDepositorVault` deployed via the factory.
 - Vault tokens are isolated per vault and cannot be shared across vaults.
