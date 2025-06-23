@@ -137,20 +137,21 @@
 85. () `addCallerCapability()` modifies this on-chain storage without bridging. See `Forwarder.sol` lines 61-69.
 86. () `execute()` checks `_canCall[msg.sender][targetAndSelector]` using only on-chain data; no off-chain signatures are involved. See `Forwarder.sol` lines 33-57.
 87. () Permissions must be granted separately per chain, so cross-chain replay attacks are not possible unless the owner intentionally duplicates permissions.
+88. () `execute()` forwards calldata without parameter validation; permissions only reference target and selector. The target contract must handle argument checks. See `Forwarder.sol` lines 33-54.
 
 ### Request Hashing Without Signatures
-88. () `asyncDepositHashes` and `asyncRedeemHashes` store used request hashes per chain. See `Provisioner.sol` lines 62-72.
-89. () `_getRequestHashParams` and `_getRequestHash` compute `keccak256` over request parameters with no EIP‑712 domain. See `Provisioner.sol` lines 1005-1034.
-90. () `requestDeposit` and `requestRedeem` generate these hashes and mark them used. See `Provisioner.sol` lines 204-217 and 247-249.
-91. () Because no signatures are used, cross-chain domain separator vulnerabilities do not apply; each deployment tracks its own request hashes.
+89. () `asyncDepositHashes` and `asyncRedeemHashes` store used request hashes per chain. See `Provisioner.sol` lines 62-72.
+90. () `_getRequestHashParams` and `_getRequestHash` compute `keccak256` over request parameters with no EIP‑712 domain. See `Provisioner.sol` lines 1005-1034.
+91. () `requestDeposit` and `requestRedeem` generate these hashes and mark them used. See `Provisioner.sol` lines 204-217 and 247-249.
+92. () Because no signatures are used, cross-chain domain separator vulnerabilities do not apply; each deployment tracks its own request hashes.
 
 ### Allowance Handling and Fee-on-Transfer Tokens
-92. () `requestDeposit` pulls tokens with `token.safeTransferFrom(msg.sender, address(this), tokensIn)`; allowances are enforced by the token. See `Provisioner.sol` lines 201-202.
-93. () `MultiDepositorVault.enter` similarly calls `token.safeTransferFrom(sender, address(this), tokenAmount)` before minting. See `MultiDepositorVault.sol` lines 67-71.
-94. () Direct solving uses the same helpers: `_solveDepositDirect` (lines 776-781) and `_solveRedeemDirect` (lines 815-820) rely on `safeTransfer` and `safeTransferFrom`.
-95. () The protocol never modifies allowances; standard ERC-20 tokens deduct fees from the transferred amount, so allowances remain accurate. Tokens that remove extra tokens are non-compliant and outside the threat model.
+93. () `requestDeposit` pulls tokens with `token.safeTransferFrom(msg.sender, address(this), tokensIn)`; allowances are enforced by the token. See `Provisioner.sol` lines 201-202.
+94. () `MultiDepositorVault.enter` similarly calls `token.safeTransferFrom(sender, address(this), tokenAmount)` before minting. See `MultiDepositorVault.sol` lines 67-71.
+95. () Direct solving uses the same helpers: `_solveDepositDirect` (lines 776-781) and `_solveRedeemDirect` (lines 815-820) rely on `safeTransfer` and `safeTransferFrom`.
+96. () The protocol never modifies allowances; standard ERC-20 tokens deduct fees from the transferred amount, so allowances remain accurate. Tokens that remove extra tokens are non-compliant and outside the threat model.
 
 ### Deposit Refund Timeout
-96. () `_syncDeposit` sets `refundableUntil = block.timestamp + depositRefundTimeout` and stores it in `userUnitsRefundableUntil[msg.sender]`. See `Provisioner.sol` lines 479-489.
-97. () Transfers query `areUserUnitsLocked` which returns `userUnitsRefundableUntil[user] >= block.timestamp`, so locks expire naturally when the timestamp passes. See `Provisioner.sol` lines 450-452.
-98. () `depositRefundTimeout` is configured via `setDepositDetails` and must not exceed `MAX_DEPOSIT_REFUND_TIMEOUT = 30 days`. See `Provisioner.sol` lines 384-395 and `Constants.sol` lines 140-143.
+97. () `_syncDeposit` sets `refundableUntil = block.timestamp + depositRefundTimeout` and stores it in `userUnitsRefundableUntil[msg.sender]`. See `Provisioner.sol` lines 479-489.
+98. () Transfers query `areUserUnitsLocked` which returns `userUnitsRefundableUntil[user] >= block.timestamp`, so locks expire naturally when the timestamp passes. See `Provisioner.sol` lines 450-452.
+99. () `depositRefundTimeout` is configured via `setDepositDetails` and must not exceed `MAX_DEPOSIT_REFUND_TIMEOUT = 30 days`. See `Provisioner.sol` lines 384-395 and `Constants.sol` lines 140-143.
