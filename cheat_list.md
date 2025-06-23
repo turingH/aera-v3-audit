@@ -183,3 +183,8 @@
 
 ### Swap Deadline Enforcement
 108. () `KyberSwapDexHooks` only prepares data and relies on KyberSwap's router for execution. The router's `SimpleSwapData` struct includes a `deadline` field, so each swap is time-bound. See `KyberSwapDexHooks.sol` lines 18-31 and `IMetaAggregationRouterV2.sol` lines 22-36.
+
+### Deployment Delegates
+109. () Factories deploy vaults via delegatecall to a deploy delegate. CREATE2 uses the factory's address, so calling the delegate directly produces a different address.
+110. () `MultiDepositorVault` constructor queries `IMultiDepositorVaultFactory` functions from `msg.sender`; deployments fail unless called via the factory.
+111. () `SingleDepositorVault` deploys successfully when called directly but uses CREATE2 with the delegate's address, so it cannot occupy the factory's deterministic vault address.
