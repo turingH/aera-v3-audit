@@ -95,3 +95,8 @@
 - `_setBeforeTransferHook` updates the stored hook; only one hook runs at a time. See `MultiDepositorVault.sol` lines 128-135.
 - `TransferWhitelistHook` checks `whitelist` mappings while `TransferBlacklistHook` checks the sanctions oracle. They are independent implementations of `IBeforeTransferHook` and do not combine automatically. See `TransferWhitelistHook.sol` lines 49-55 and `TransferBlacklistHook.sol` lines 39-43.
 
+### Forwarder Capability Scope
+- The `_canCall` mapping is local to each deployment; there is no cross-chain synchronization. See `Forwarder.sol` lines 20-22.
+- `addCallerCapability()` modifies this on-chain storage without bridging. See `Forwarder.sol` lines 61-69.
+- `execute()` checks `_canCall[msg.sender][targetAndSelector]` using only on-chain data; no off-chain signatures are involved. See `Forwarder.sol` lines 33-57.
+- Permissions must be granted separately per chain, so cross-chain replay attacks are not possible unless the owner intentionally duplicates permissions.
