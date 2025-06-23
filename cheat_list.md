@@ -18,6 +18,8 @@
 ### Provisioner Request Flow
 10. () Users create requests via `requestDeposit` or `requestRedeem` transferring tokens/units to the Provisioner.
 11. () Vault solving (`solveRequestsVault`) mints/burns units through `enter()`/`exit()` using oracle-based pricing and is restricted by `requiresAuth` (see `Provisioner.sol` line 294).
+    - `enter()` simply transfers tokens from the solver and mints the exact `unitsAmount`; no deposit fees are deducted (see `MultiDepositorVault.sol` lines 62-74).
+    - Price conversion uses `convertTokenToUnitsIfActive`, which divides by the vault's stored `unitPrice` and never calls `previewDeposit` or charges ERC4626-style fees (see `PriceAndFeeCalculator.sol` lines 272-289 and 388-401).
 12. () Direct solving supports only fixed-price requests and transfers existing vault units or tokens from the solver to `request.user`; no minting occurs (see `_solveDepositDirect` lines 776-782 and `_solveRedeemDirect` lines 816-820).
 13. () Deposit cap enforcement occurs only when vault units are minted. `deposit` and `mint` call `_requireDepositCapNotExceeded` before `_syncDeposit` (see `Provisioner.sol` lines 117-128 and 141-150). Vault-solving functions `_solveDepositVaultAutoPrice` and `_solveDepositVaultFixedPrice` check `_guardDepositCapExceeded` before calling `enter()` (lines 541-552 and 598-610). `_solveDepositDirect` merely transfers existing units without minting, so the cap is unchanged (lines 764-791).
 14. () There are **no reward or incentive contracts** anywhere in the code base.
@@ -199,3 +201,4 @@
 113. () The owner initializes `unitPrice` once via `setInitialPrice`. Calls revert if `unitPrice == 0`, preventing deposits before initialization. See `PriceAndFeeCalculator.sol` lines 94-118.
 114. () Provisioner conversions call `convertTokenToUnitsIfActive`, so pre-transferring tokens to the vault cannot influence share pricing. See `Provisioner.sol` lines 932-941.
 115. () Allowances are checked only once during `requestDeposit` or `requestRedeem` when the full token amount (including any solver tip) is transferred to the Provisioner. Later solving functions operate solely on these stored funds or on solver-held tokens and never invoke `safeTransferFrom` on the user again.
+116. () `MultiDepositorVault` is not an ERC‑4626 vault and implements no deposit fee logic. Deposits cannot revert due to fee deductions because `enter()` mints the provided `unitsAmount` exactly and `convertTokenToUnitsIfActive` performs a simple price division.
