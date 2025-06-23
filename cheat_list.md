@@ -159,3 +159,6 @@
 ### Guardian Submission Permissions
 100. () `setGuardianRoot` is restricted by `requiresAuth`, so only the owner assigns each guardian's allowed operations. See `BaseVault.sol` lines 154-156.
 101. () `_executeSubmit` verifies every non-static operation against the guardian's Merkle root before calling it; static calls use `staticcall` and cannot modify state. See `BaseVault.sol` lines 382-418.
+
+### Router Deadline Enforcement
+102. () `UniswapV3DexHooks` functions run only as before-operation hooks. They encode token details and slippage checks but never execute the swap or validate deadlines. The actual swap is performed immediately afterwards via Uniswap's router with the same parameters, including `deadline`. Example usage in `UniswapV3DexHooks.fork.t.sol` lines 200-233 shows an `Operation` targeting `UNIV3_ROUTER` with `hooks: address(dexHooks)` and a future `deadline`. The router interface defined in `ISwapRouter.sol` lines 11-32 and 39-66 includes `deadline` in its parameter structs, so the router enforces `deadline >= block.timestamp`. Deadline checks in the hooks would therefore be redundant.
