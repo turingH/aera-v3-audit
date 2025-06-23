@@ -118,3 +118,9 @@
 - `addCallerCapability()` modifies this on-chain storage without bridging. See `Forwarder.sol` lines 61-69.
 - `execute()` checks `_canCall[msg.sender][targetAndSelector]` using only on-chain data; no off-chain signatures are involved. See `Forwarder.sol` lines 33-57.
 - Permissions must be granted separately per chain, so cross-chain replay attacks are not possible unless the owner intentionally duplicates permissions.
+
+### Allowance Handling and Fee-on-Transfer Tokens
+- `requestDeposit` pulls tokens with `token.safeTransferFrom(msg.sender, address(this), tokensIn)`; allowances are enforced by the token. See `Provisioner.sol` lines 201-202.
+- `MultiDepositorVault.enter` similarly calls `token.safeTransferFrom(sender, address(this), tokenAmount)` before minting. See `MultiDepositorVault.sol` lines 67-71.
+- Direct solving uses the same helpers: `_solveDepositDirect` (lines 776-781) and `_solveRedeemDirect` (lines 815-820) rely on `safeTransfer` and `safeTransferFrom`.
+- The protocol never modifies allowances; standard ERC-20 tokens deduct fees from the transferred amount, so allowances remain accurate. Tokens that remove extra tokens are non-compliant and outside the threat model.
