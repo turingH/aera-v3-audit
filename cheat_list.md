@@ -173,3 +173,9 @@
 104. () `_enforceDailyLoss` checks that `newLoss <= maxDailyLossInNumeraire` before returning. Both values are `uint128`, so the cast in `_enforceSlippageLimitAndDailyLoss` is safe. See `BaseSlippageHooks.sol` lines 186-212 and `IBaseSlippageHooks.sol` lines 13-23.
 105. () Claiming fees is permitted while a vault is paused. `isVaultPaused` and `previewFees` simply expose stored values (see `PriceAndFeeCalculator.sol` lines 305-321). `FeeVault.claimFees` restricts withdrawals to the fee recipient via `onlyFeeRecipient` (see `FeeVault.sol` lines 43-46 and 105-116).
 
+### Async Request Enabling Checks
+106. () Both solving paths enforce the token's async enable flags.
+    - `solveRequestsVault` verifies `asyncDepositEnabled` and `asyncRedeemEnabled` before processing each request (see `src/core/Provisioner.sol` lines 304-334).
+    - `solveRequestsDirect` performs the same checks before invoking `_solveDepositDirect` or `_solveRedeemDirect` (see `src/core/Provisioner.sol` lines 358-378).
+    - The internal helpers rely on these pre-checks and therefore omit them.
+    - Unit tests at `test/core/unit/Provisioner.t.sol` lines 3515-3590 confirm that direct solving reverts with `Aera__AsyncDepositDisabled` or `Aera__AsyncRedeemDisabled` when the flags are false.
