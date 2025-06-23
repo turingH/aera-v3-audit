@@ -90,3 +90,8 @@
 - `_solveDepositDirect` and `_solveRedeemDirect` always deliver assets to `request.user`. See `Provisioner.sol` lines 776-787 and 815-826.
 - CCTP bridging uses the vault address (`bytes32(uint160(address(vault)))`) as the cross-chain recipient, not user addresses. See `CCTPHooks.fork.t.sol` lines 147-156.
 
+### Transfer Hook Design
+- `MultiDepositorVault` stores a single `beforeTransferHook` selected at deployment. `_update()` fetches this hook and calls `hook.beforeTransfer()` once per transfer. See `MultiDepositorVault.sol` lines 49-54 and 108-114.
+- `_setBeforeTransferHook` updates the stored hook; only one hook runs at a time. See `MultiDepositorVault.sol` lines 128-135.
+- `TransferWhitelistHook` checks `whitelist` mappings while `TransferBlacklistHook` checks the sanctions oracle. They are independent implementations of `IBeforeTransferHook` and do not combine automatically. See `TransferWhitelistHook.sol` lines 49-55 and `TransferBlacklistHook.sol` lines 39-43.
+
