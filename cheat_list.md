@@ -22,6 +22,9 @@
 - Deposit cap enforcement occurs only when vault units are minted. `deposit` and `mint` call `_requireDepositCapNotExceeded` before `_syncDeposit` (see `Provisioner.sol` lines 117-128 and 141-150). Vault-solving functions `_solveDepositVaultAutoPrice` and `_solveDepositVaultFixedPrice` check `_guardDepositCapExceeded` before calling `enter()` (lines 541-552 and 598-610). `_solveDepositDirect` merely transfers existing units without minting, so the cap is unchanged (lines 764-791).
 - The repository does not include any reward or incentivization contracts.
 - Solver tips are accumulated and paid once per batch.
+- Deposits deduct tips before entering the vault; `_solveDepositVaultAutoPrice` keeps the tip and deposits `tokens - solverTip` (see `src/core/Provisioner.sol` lines 520-552).
+- Redeems exit with the full amount, then transfer `tokenOut - solverTip` to the user; `_solveRedeemVaultAutoPrice` retains the tip (lines 650-681).
+- `solveRequestsVault` sends the accumulated tips from the Provisioner to the solver at the end of the batch (lines 336-349).
 
 ### Fee Calculation
 - `DelayedFeeCalculator` records snapshots; fees accrue after the dispute period.
