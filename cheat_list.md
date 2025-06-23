@@ -188,3 +188,8 @@
 109. () Factories deploy vaults via delegatecall to a deploy delegate. CREATE2 uses the factory's address, so calling the delegate directly produces a different address.
 110. () `MultiDepositorVault` constructor queries `IMultiDepositorVaultFactory` functions from `msg.sender`; deployments fail unless called via the factory.
 111. () `SingleDepositorVault` deploys successfully when called directly but uses CREATE2 with the delegate's address, so it cannot occupy the factory's deterministic vault address.
+
+### Vault Price Initialization
+112. () `PriceAndFeeCalculator` stores each vault's `unitPrice`. Conversion helpers like `convertTokenToUnitsIfActive` rely exclusively on this stored value and never read the vault's token balance. See `PriceAndFeeCalculator.sol` lines 270-289.
+113. () The owner initializes `unitPrice` once via `setInitialPrice`. Calls revert if `unitPrice == 0`, preventing deposits before initialization. See `PriceAndFeeCalculator.sol` lines 94-118.
+114. () Provisioner conversions call `convertTokenToUnitsIfActive`, so pre-transferring tokens to the vault cannot influence share pricing. See `Provisioner.sol` lines 932-941.
