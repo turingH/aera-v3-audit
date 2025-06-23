@@ -162,3 +162,6 @@
 
 ### Router Deadline Enforcement
 102. () `UniswapV3DexHooks` functions run only as before-operation hooks. They encode token details and slippage checks but never execute the swap or validate deadlines. The actual swap is performed immediately afterwards via Uniswap's router with the same parameters, including `deadline`. Example usage in `UniswapV3DexHooks.fork.t.sol` lines 200-233 shows an `Operation` targeting `UNIV3_ROUTER` with `hooks: address(dexHooks)` and a future `deadline`. The router interface defined in `ISwapRouter.sol` lines 11-32 and 39-66 includes `deadline` in its parameter structs, so the router enforces `deadline >= block.timestamp`. Deadline checks in the hooks would therefore be redundant.
+
+103. () `_enforceDailyLoss` checks that `newLoss <= maxDailyLossInNumeraire` before returning. Both values are `uint128`, so the cast in `_enforceSlippageLimitAndDailyLoss` is safe. See `BaseSlippageHooks.sol` lines 186-212 and `IBaseSlippageHooks.sol` lines 13-23.
+
