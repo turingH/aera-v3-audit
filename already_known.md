@@ -12,3 +12,9 @@
 - **Code reference**: [`Provisioner.sol` lines 281-286](./src/core/Provisioner.sol#L281-L286) handle the refund transfer. [`TransferWhitelistHook.sol` lines 49-54](./src/periphery/hooks/transfer/TransferWhitelistHook.sol#L49-L54) enforce whitelist status.
 - **Impact**: Redeem refunds revert if the user is no longer whitelisted, leaving vault units stuck in the Provisioner until re-whitelisted.
 
+
+## Cross-Chain Whitelist Desynchronization
+
+- **Root cause**: `TransferWhitelistHook` stores whitelist status per chain with no synchronization, so bridged addresses remain unwhitelisted on other chains.
+- **Code reference**: [`TransferWhitelistHook.sol` lines 15-39](./src/periphery/hooks/transfer/TransferWhitelistHook.sol#L15-L39) define the mapping and update logic. The check in [`TransferWhitelistHook.sol` lines 49-54](./src/periphery/hooks/transfer/TransferWhitelistHook.sol#L49-L54) rejects unwhitelisted recipients.
+- **Impact**: Cross-chain transfers revert on the destination chain until the recipient is manually whitelisted there, potentially stranding assets.
