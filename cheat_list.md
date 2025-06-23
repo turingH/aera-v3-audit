@@ -20,7 +20,15 @@
 11. () Vault solving (`solveRequestsVault`) mints/burns units through `enter()`/`exit()` using oracle-based pricing and is restricted by `requiresAuth` (see `Provisioner.sol` line 294).
 12. () Direct solving supports only fixed-price requests and transfers existing vault units or tokens from the solver to `request.user`; no minting occurs (see `_solveDepositDirect` lines 776-782 and `_solveRedeemDirect` lines 816-820).
 13. () Deposit cap enforcement occurs only when vault units are minted. `deposit` and `mint` call `_requireDepositCapNotExceeded` before `_syncDeposit` (see `Provisioner.sol` lines 117-128 and 141-150). Vault-solving functions `_solveDepositVaultAutoPrice` and `_solveDepositVaultFixedPrice` check `_guardDepositCapExceeded` before calling `enter()` (lines 541-552 and 598-610). `_solveDepositDirect` merely transfers existing units without minting, so the cap is unchanged (lines 764-791).
-14. () The repository does not include any reward or incentivization contracts.
+14. () There are **no reward or incentive contracts** anywhere in the code base.
+    - Searching `src/` for keywords `reward`, `incentive`, or `staking` returns
+      no results.
+    - Request functions (`requestDeposit`, `requestRedeem`) simply transfer
+      assets to the `Provisioner` and emit events; they do not increment any
+      participation counters or call external reward modules.
+    - Functions such as `solveRequestsVault` and `solveRequestsDirect` never
+      allocate tokens beyond the requested amounts, and there is no
+      `allocateRewards` or similar function in the repository.
 15. () Solver tips are accumulated and paid once per batch.
 16. () Deposits deduct tips before entering the vault; `_solveDepositVaultAutoPrice` keeps the tip and deposits `tokens - solverTip` (see `src/core/Provisioner.sol` lines 520-552).
 17. () Redeems exit with the full amount, then transfer `tokenOut - solverTip` to the user; `_solveRedeemVaultAutoPrice` retains the tip (lines 650-681).
