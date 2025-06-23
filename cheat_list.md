@@ -17,10 +17,10 @@
 
 ### Provisioner Request Flow
 - Users create requests via `requestDeposit` or `requestRedeem` transferring tokens/units to the Provisioner.
-- Vault solving (`solveRequestsVault`) mints/burns units through `enter()`/`exit()` using oracle-based pricing.
-- Direct solving supports only fixed-price requests and transfers existing units from solver to user.
+- Vault solving (`solveRequestsVault`) mints/burns units through `enter()`/`exit()` using oracle-based pricing and is restricted by `requiresAuth` (see `Provisioner.sol` line 294).
+- Direct solving supports only fixed-price requests and transfers existing vault units or tokens from the solver to `request.user`; no minting occurs (see `_solveDepositDirect` lines 776-782 and `_solveRedeemDirect` lines 816-820).
 - Deposit cap enforcement occurs only when vault units are minted. `deposit` and `mint` call `_requireDepositCapNotExceeded` before `_syncDeposit` (see `Provisioner.sol` lines 117-128 and 141-150). Vault-solving functions `_solveDepositVaultAutoPrice` and `_solveDepositVaultFixedPrice` check `_guardDepositCapExceeded` before calling `enter()` (lines 541-552 and 598-610). `_solveDepositDirect` merely transfers existing units without minting, so the cap is unchanged (lines 764-791).
-
+- The repository does not include any reward or incentivization contracts.
 - Solver tips are accumulated and paid once per batch.
 
 ### Fee Calculation
@@ -96,12 +96,19 @@
 - `TransferBlacklistHook.beforeTransfer` blocks sanctioned addresses as `from` or `to` even during provisioner operations. See `TransferBlacklistHook.sol` lines 41-43.
 - Bridge contracts designated as provisioner therefore cannot mint or transfer vault units to restricted users.
 
+### Cross-Chain Whitelist Limitations
+- `TransferWhitelistHook` stores whitelist entries per chain with no automatic synchronization. See `TransferWhitelistHook.sol` line 16.
+- Addresses bridged to another chain are not whitelisted by default; `updateWhitelist` must be called separately on each chain. See `TransferWhitelistHook.sol` lines 22-39.
+- If the destination address is not whitelisted, `beforeTransfer()` reverts during mint or burn, preventing redemption. See `TransferWhitelistHook.sol` lines 49-54 and `MultiDepositorVault.sol` lines 108-125.
+
 ### Request Address Binding & Bridging Behavior
 - `struct Request` includes `address user` storing the caller at creation. See `Types.sol` lines 251-265.
 - `requestDeposit` and `requestRedeem` set the user to `msg.sender` via `_getRequestHashParams`. See `Provisioner.sol` lines 201-217 and 242-258.
 - `_solveDepositDirect` and `_solveRedeemDirect` always deliver assets to `request.user`. See `Provisioner.sol` lines 776-787 and 815-826.
 - CCTP bridging passes the vault address (`bytes32(uint160(address(vault)))`) as `mintRecipient`. See `CCTPHooks.fork.t.sol` lines 146-163.
 - `depositForBurn` forbids a non-zero `destinationCaller`, preventing users from specifying an alternate destination address. See `CCTPHooks.sol` lines 21-27.
+- CCTP bridging uses the vault address (`bytes32(uint160(address(vault)))`) as the cross-chain recipient, not user addresses. See `CCTPHooks.fork.t.sol` lines 147-156.
+- Direct solving does not support cross-chain address mapping. Assets always return to `request.user` on the source chain. See `Provisioner.sol` lines 764-791 and 803-830.
 
 ### Transfer Hook Design
 - `MultiDepositorVault` stores a single `beforeTransferHook` selected at deployment. `_update()` fetches this hook and calls `hook.beforeTransfer()` once per transfer. See `MultiDepositorVault.sol` lines 49-54 and 108-114.
