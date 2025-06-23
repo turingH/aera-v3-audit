@@ -58,3 +58,8 @@
 - Deposit caps enforce vault size limits.
 - Guard functions prevent solver tip underflow and deadline bypass.
 
+### Transfer Whitelist Mechanics
+- `updateWhitelist(address vault, address[] addresses, bool isWhitelisted)` toggles whitelist status for each address and can reverse previous removals. See `TransferWhitelistHook.sol` lines 22-39.
+- Only callers with `requiresVaultAuth` may update the whitelist, preventing unauthorized freezes (line 25).
+- `beforeTransfer()` checks both parties against the whitelist; re-whitelisting restores transfer ability. See `TransferWhitelistHook.sol` lines 41-55.
+
