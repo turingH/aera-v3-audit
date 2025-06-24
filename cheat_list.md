@@ -83,9 +83,19 @@
 
 ### Atomicity & Reentrancy
 37. () `nonReentrant` modifier guards `solveRequestsVault` and `solveRequestsDirect`.
-38. () Request hashes are marked used before processing but revert on failure, preserving state.
-39. () In `_solveRedeemDirect`, the request hash is cleared before `safeTransfer`; if the vault's `beforeTransfer` hook reverts, `SafeERC20` reverts the entire call so the hash remains intact. See `Provisioner.sol` lines 812-830, `MultiDepositorVault.sol` lines 108-125, and `TransferWhitelistHook.sol` lines 49-54.
-40. () `MultiDepositorVault.exit` burns units before transferring tokens.
+38. () Request hashes are marked used before processing. Guard helpers return `0`
+    (no revert) when a request is unsolvable, leaving the hash set so another
+    solver may retry later. The hash is cleared only upon success. See
+    `Provisioner.sol` lines 520-612.
+39. () Unit tests such as `test_solveRequestsVault_success_unsolvable_autoPrice_deposit_AmountBoundExceeded`
+    at `Provisioner.t.sol` lines 2142-2189 expect the hash to remain `true`
+    after a failed solve attempt, confirming the retry mechanism.
+40. () In `_solveRedeemDirect`, the request hash is cleared before `safeTransfer`;
+    if the vault's `beforeTransfer` hook reverts, `SafeERC20` reverts the entire
+    call so the hash remains intact. See `Provisioner.sol` lines 812-830,
+    `MultiDepositorVault.sol` lines 108-125, and `TransferWhitelistHook.sol`
+    lines 49-54.
+41. () `MultiDepositorVault.exit` burns units before transferring tokens.
 
 ### Fee Accrual vs Claiming
 41. () `_accrueFees` only updates accounting variables; actual token transfers occur in `claimFees`.
