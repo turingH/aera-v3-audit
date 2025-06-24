@@ -174,7 +174,10 @@
 100. () `depositRefundTimeout` is configured via `setDepositDetails` and must not exceed `MAX_DEPOSIT_REFUND_TIMEOUT = 30 days`. See `Provisioner.sol` lines 384-395 and `Constants.sol` lines 140-143.
 
 ### Guardian Submission Permissions
-101. () `setGuardianRoot` is restricted by `requiresAuth`, so only the owner assigns each guardian's allowed operations. See `BaseVault.sol` lines 154-156.
+101. () `setGuardianRoot` is restricted by `requiresAuth` and calls `_setGuardianRoot`.
+    - `_setGuardianRoot` verifies the guardian address is non-zero and whitelisted, and
+      requires the Merkle root to be non-zero. See `BaseVault.sol` lines 521-535.
+    - Guardians therefore cannot be assigned a zero root.
 102. () Each Merkle leaf hashes `target`, `selector`, `value`, hook addresses and optional callback data (see `BaseVault.sol` lines 608-624). This binds the exact call context to the owner's approved root.
 103. () `_executeSubmit` verifies every non-static operation with `_verifyOperation`; only calls included in the guardian's root are executed. Static calls use `staticcall` and cannot modify state. See `BaseVault.sol` lines 382-418 and 608-640.
 104. () Because guardians cannot change their root, they cannot add arbitrary calls. Any attempt to submit an unapproved operation fails proof verification.
@@ -203,3 +206,6 @@
 114. () Provisioner conversions call `convertTokenToUnitsIfActive`, so pre-transferring tokens to the vault cannot influence share pricing. See `Provisioner.sol` lines 932-941.
 115. () Allowances are checked only once during `requestDeposit` or `requestRedeem` when the full token amount (including any solver tip) is transferred to the Provisioner. Later solving functions operate solely on these stored funds or on solver-held tokens and never invoke `safeTransferFrom` on the user again.
 116. () `MultiDepositorVault` is not an ERC‑4626 vault and implements no deposit fee logic. Deposits cannot revert due to fee deductions because `enter()` mints the provided `unitsAmount` exactly and `convertTokenToUnitsIfActive` performs a simple price division.
+117. () Guardians can be fully removed via `removeGuardian`, which deletes the mapping entry with
+      `guardianRoots.remove(guardian)` and emits `GuardianRootSet(guardian, 0x0)`.
+      See `BaseVault.sol` lines 160-165.
