@@ -232,6 +232,12 @@
 114. () Provisioner conversions call `convertTokenToUnitsIfActive`, so pre-transferring tokens to the vault cannot influence share pricing. See `Provisioner.sol` lines 932-941.
 115. () Allowances are checked only once during `requestDeposit` or `requestRedeem` when the full token amount (including any solver tip) is transferred to the Provisioner. Later solving functions operate solely on these stored funds or on solver-held tokens and never invoke `safeTransferFrom` on the user again.
 116. () `MultiDepositorVault` is not an ERC‑4626 vault and implements no deposit fee logic. Deposits cannot revert due to fee deductions because `enter()` mints the provided `unitsAmount` exactly and `convertTokenToUnitsIfActive` performs a simple price division.
-117. () Guardians can be fully removed via `removeGuardian`, which deletes the mapping entry with
-      `guardianRoots.remove(guardian)` and emits `GuardianRootSet(guardian, 0x0)`.
-      See `BaseVault.sol` lines 160-165.
+117. () Guardians can be fully removed via `removeGuardian`.
+      - Implementation at `src/core/BaseVault.sol` lines 160‑165 calls
+        `guardianRoots.remove(guardian)` and emits
+        `GuardianRootSet(guardian, bytes32(0))`.
+      - Removal deletes the key so that `guardianRoots.contains(guardian)`
+        returns `false`. Functions gated by `onlyAuthOrGuardian` therefore
+        reject the former guardian.
+      - Unit test `BaseVault.t.sol` lines 183‑204 verifies successful
+        revocation and event emission.
