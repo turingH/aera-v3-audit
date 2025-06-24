@@ -251,3 +251,11 @@
         reject the former guardian.
       - Unit test `BaseVault.t.sol` lines 183‑204 verifies successful
         revocation and event emission.
+
+### Price Update Staleness Validation
+118. () `_validatePriceUpdate` enforces that price timestamps are recent.
+    - Requires `timestamp > vaultPriceState.timestamp`.
+    - Requires `block.timestamp >= timestamp`.
+    - Requires `vaultPriceState.maxPriceAge != 0`.
+    - Requires `maxPriceAge + timestamp >= block.timestamp`.
+    See `PriceAndFeeCalculator.sol` lines 431-446.
