@@ -259,3 +259,8 @@
     - Requires `vaultPriceState.maxPriceAge != 0`.
     - Requires `maxPriceAge + timestamp >= block.timestamp`.
     See `PriceAndFeeCalculator.sol` lines 431-446.
+
+119. () `convertUnitsToTokenIfActive` and `convertTokenToUnitsIfActive` revert with `Aera__VaultPaused` when the vault is paused.
+    - These helpers enforce `require(!vaultState.paused, Aera__VaultPaused());` in `PriceAndFeeCalculator.sol` lines 246-256 and 278-289.
+    - Provisioner helpers such as `_unitsToTokensCeilIfActive` rely on them, so `solveRequestsVault` cannot mint or burn while paused.
+    - Unit tests `Provisioner.t.sol` lines 3053-3102 verify this behaviour.
