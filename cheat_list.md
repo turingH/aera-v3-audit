@@ -137,6 +137,11 @@
     49-54, and `TransferBlacklistHook.sol` lines 41-43. `MultiDepositorVault._update`
     passes the vault's provisioner as this `transferAgent` for every transfer
     (see `MultiDepositorVault.sol` lines 108-115).
+64a. () Because bridges use burn (`to == address(0)`) and mint (`from == address(0)`) calls,
+     both operations bypass the `isVaultUnitTransferable` check when the bridge
+     contract is the provisioner. Setting `isVaultUnitTransferable` to `false`
+     freezes only direct user transfers; provisioner-mediated bridging remains
+     functional unless restricted by whitelist or blacklist hooks.
 
 ### Bridge Transfer Restrictions
 65. () `MultiDepositorVault._update` calls `hook.beforeTransfer(from, to, provisioner)` for every mint, burn, or transfer, ensuring hooks run for bridge operations. See `MultiDepositorVault.sol` lines 108-125.
