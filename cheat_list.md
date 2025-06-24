@@ -119,7 +119,20 @@
 61. () The whitelist mapping is a simple boolean flag per address. Re-whitelisting sets `whitelist[vault][addr] = true` again, unlocking all vault units regardless of origin. See `TransferWhitelistHook.sol` lines 16-39.
 62. () The two `require` statements in `beforeTransfer` mirror each other. Each verifies the non-`transferAgent` address is whitelisted, so skipping one check never allows both parties to bypass validation. See `TransferWhitelistHook.sol` lines 49-55 and `MultiDepositorVault.sol` lines 108-125.
 63. () `MultiDepositorVault._update` always passes the vault's `provisioner` as `transferAgent`. The `from` whitelist check is skipped only when `from` equals this provisioner. If the provisioner calls `beforeTransfer` with any other `from` address, the call reverts unless that address is whitelisted. The recipient must still be whitelisted. See `MultiDepositorVault.sol` lines 108-115 and `TransferWhitelistHook.sol` lines 49-55. Unit tests at `BeforeTransferWhitelistHooks.t.sol` lines 72-98 confirm this behavior.
-64. () `AbstractTransferHook.beforeTransfer` only enforces `isVaultUnitTransferable` when neither participant is the `transferAgent` nor `address(0)`. Derived hooks like `TransferWhitelistHook` and `TransferBlacklistHook` override this to validate the non-`transferAgent` address even during mint or burn. See `AbstractTransferHook.sol` lines 24-33, `TransferWhitelistHook.sol` lines 49-54, and `TransferBlacklistHook.sol` lines 41-43.
+64. () `AbstractTransferHook.beforeTransfer` only enforces
+    `isVaultUnitTransferable` when **both** `from` and `to` differ from the
+    `transferAgent` and are non-zero. The interface explicitly documents the
+    `transferAgent` as an address that is "always allowed to transfer the units"
+    (see `IBeforeTransferHook.sol` lines 29-33). This means disabling transfers
+    via `setIsVaultUnitsTransferable` does **not** restrict the provisioner. The
+    provisioner can still move units between any addresses while transfers are
+    disabled. Derived hooks like `TransferWhitelistHook` and
+    `TransferBlacklistHook` override `beforeTransfer` to validate the
+    non‑`transferAgent` address even during mint or burn. See
+    `AbstractTransferHook.sol` lines 24-33, `TransferWhitelistHook.sol` lines
+    49-54, and `TransferBlacklistHook.sol` lines 41-43. `MultiDepositorVault._update`
+    passes the vault's provisioner as this `transferAgent` for every transfer
+    (see `MultiDepositorVault.sol` lines 108-115).
 
 ### Bridge Transfer Restrictions
 65. () `MultiDepositorVault._update` calls `hook.beforeTransfer(from, to, provisioner)` for every mint, burn, or transfer, ensuring hooks run for bridge operations. See `MultiDepositorVault.sol` lines 108-125.
