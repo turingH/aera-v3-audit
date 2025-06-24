@@ -53,8 +53,12 @@
 ### Slippage Hooks
 24. () Trades call `_enforceSlippageLimitAndDailyLoss` which
   1. checks per-trade slippage limit,
-  2. updates and checks cumulative daily loss,
-  3. resets daily counters when a new day starts.
+ 2. updates and checks cumulative daily loss,
+ 3. resets daily counters when a new day starts.
+  4. executes only when `valueBefore > valueAfter` because
+     `_enforceSlippageLimitAndDailyLossLog` returns early for
+     profitable trades, preventing underflow. See
+     `BaseSlippageHooks.sol` lines 154-166.
 
 ### KyberSwapDexHooks Fee Configuration
 25. () `_processSwapHooks` rejects any fee receivers:
@@ -194,7 +198,11 @@
 102. () Each Merkle leaf hashes `target`, `selector`, `value`, hook addresses and optional callback data (see `BaseVault.sol` lines 608-624). This binds the exact call context to the owner's approved root.
 103. () `_executeSubmit` verifies every non-static operation with `_verifyOperation`; only calls included in the guardian's root are executed. Static calls use `staticcall` and cannot modify state. See `BaseVault.sol` lines 382-418 and 608-640.
 104. () Because guardians cannot change their root, they cannot add arbitrary calls. Any attempt to submit an unapproved operation fails proof verification.
-105. () `_enforceDailyLoss` checks that `newLoss <= maxDailyLossInNumeraire` before returning. Both values are `uint128`, so the cast in `_enforceSlippageLimitAndDailyLoss` is safe. See `BaseSlippageHooks.sol` lines 186-212 and `IBaseSlippageHooks.sol` lines 13-23.
+105. () `_enforceDailyLoss` checks that `newLoss <= maxDailyLossInNumeraire` before returning. The subtraction
+       of `loss = valueBefore - valueAfter` occurs only when `valueBefore > valueAfter`
+       (verified in `_enforceSlippageLimitAndDailyLossLog`), so the unchecked block cannot
+       underflow. Both values are `uint128`, so casting in `_enforceSlippageLimitAndDailyLoss`
+       is safe. See `BaseSlippageHooks.sol` lines 154-212 and `IBaseSlippageHooks.sol` lines 13-23.
 106. () Claiming fees is permitted while a vault is paused. `isVaultPaused` and `previewFees` simply expose stored values (see `PriceAndFeeCalculator.sol` lines 305-321). `FeeVault.claimFees` restricts withdrawals to the fee recipient via `onlyFeeRecipient` (see `FeeVault.sol` lines 43-46 and 105-116).
 
 ### Async Request Enabling Checks
