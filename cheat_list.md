@@ -70,7 +70,7 @@
 ### Request Cancellation Mechanics
 31. () `refundRequest()` only permits early cancellation when the caller is authorized or the deadline has passed. See `Provisioner.sol` lines 262-289.
 32. () Unit test `Provisioner.t.sol` lines 1737-1769 demonstrates unauthorized callers revert before the deadline.
-33. () Regular users therefore cannot revoke pending requests; they remain valid until executed or expired.
+33. () Regular users therefore cannot revoke pending requests; they remain valid until executed or expired. If `asyncDepositEnabled` or `asyncRedeemEnabled` is later disabled, solvers will skip or revert when processing those requests, so the funds stay locked until the deadline or an authorized refund.
 
 ### Vault Architecture
 34. () Each `Provisioner` manages a single `MultiDepositorVault` deployed via the factory.
@@ -187,6 +187,7 @@
     - `solveRequestsDirect` performs the same checks before invoking `_solveDepositDirect` or `_solveRedeemDirect` (see `src/core/Provisioner.sol` lines 358-378).
     - The internal helpers rely on these pre-checks and therefore omit them.
     - Unit tests at `test/core/unit/Provisioner.t.sol` lines 3515-3590 confirm that direct solving reverts with `Aera__AsyncDepositDisabled` or `Aera__AsyncRedeemDisabled` when the flags are false.
+    - Disabling these flags after a request is created prevents solvers from executing it; see bullet 33 for how this locks funds until the deadline.
 
 ### Swap Deadline Enforcement
 108. () `KyberSwapDexHooks` only prepares data and relies on KyberSwap's router for execution. The router's `SimpleSwapData` struct includes a `deadline` field, so each swap is time-bound. See `KyberSwapDexHooks.sol` lines 18-31 and `IMetaAggregationRouterV2.sol` lines 22-36.
