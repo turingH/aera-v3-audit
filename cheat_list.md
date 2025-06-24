@@ -173,6 +173,7 @@
 77. () `_solveDepositDirect` and `_solveRedeemDirect` always deliver assets to `request.user`. See `Provisioner.sol` lines 776-787 and 815-826.
 78. () CCTP bridging uses the vault address (`bytes32(uint160(address(vault)))`) as the cross-chain recipient, not user addresses. See `CCTPHooks.fork.t.sol` lines 147-156.
 79. () Direct solving does not support cross-chain address mapping. Assets always return to `request.user` on the source chain. See `Provisioner.sol` lines 764-791 and 803-830.
+79a. () `request.user` is permanently set to `msg.sender` when the request is created, and `_solveRedeemDirect` sends tokens to this stored address with `token.safeTransferFrom(msg.sender, request.user, request.tokens)` (lines 819‑820). Account-abstraction wallets that deploy different addresses per chain therefore receive funds at an address they do not control. This behavior is intentional and not considered a security bug.
 80. () Requests move assets to the Provisioner and record the hash on-chain; there is no off-chain signature to replay across chains. See `requestDeposit` lines 201-217 and `requestRedeem` lines 242-258.
 81. () Solving functions rebuild the hash from storage using `_getRequestHash` and track usage via `asyncDepositHashes` and `asyncRedeemHashes`, preventing cross-chain reuse. See `Provisioner.sol` lines 68-72 and 1005-1030.
 
